@@ -108,7 +108,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
       {/* Step Wizard Header */}
       {step !== MeasureStep.UPLOAD && (
         <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pt-6 pointer-events-none">
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl pointer-events-auto">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-6 py-3 flex items-center gap-4 shadow-2xl pointer-events-auto">
             <StepIndicator active={step === MeasureStep.CALIBRATE} done={step > MeasureStep.CALIBRATE} label="1. Calibrate" />
             <div className="w-8 h-px bg-white/10"></div>
             <StepIndicator active={step === MeasureStep.TRACE} done={step > MeasureStep.TRACE} label="2. Trace" />
@@ -121,13 +121,13 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
       {/* --- UPLOAD VIEW --- */}
       {step === MeasureStep.UPLOAD && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-enter z-10">
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-[0_0_60px_rgba(139,92,246,0.3)] mb-8">
+          <div className="w-24 h-24 bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-[0_0_60px_rgba(139,92,246,0.3)] mb-8">
             <Upload size={40} className="text-white" />
           </div>
           <h2 className="text-4xl font-display font-bold mb-4 tracking-tight">Smart Measure 2.0</h2>
           <p className="text-slate-400 max-w-md mb-10 text-lg">Upload a plot map. Calibrate the scale. Get instant legal-grade measurements.</p>
 
-          <label className="group relative px-8 py-4 bg-white text-slate-900 rounded-xl font-bold text-lg cursor-pointer hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)] overflow-hidden">
+          <label className="group relative px-8 py-4 bg-white text-slate-900 font-bold text-lg cursor-pointer hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
             <span className="flex items-center gap-3"><Upload size={20} /> Upload Map</span>
             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -170,19 +170,27 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
 
               {/* Connection Line (Elastic) */}
               {!isClosed && polyPoints.length > 0 && (
-                /* Elastic line logic requires translating mousePos to SVG coords - simplified here for brevity */
-                <></>
+                <line
+                  x1={polyPoints[polyPoints.length - 1].x}
+                  y1={polyPoints[polyPoints.length - 1].y}
+                  x2={(mousePos.x - containerRef.current!.getBoundingClientRect().left) / containerRef.current!.getBoundingClientRect().width * imgDims.w}
+                  y2={(mousePos.y - containerRef.current!.getBoundingClientRect().top) / containerRef.current!.getBoundingClientRect().height * imgDims.h}
+                  stroke="#10b981"
+                  strokeWidth="2"
+                  strokeDasharray="4,4"
+                  opacity="0.8"
+                />
               )}
             </svg>
 
             {/* Custom Cursor / Magnifier */}
             {step !== MeasureStep.REPORT && (
               <div
-                className="fixed w-24 h-24 rounded-full border-2 border-white/50 backdrop-blur-sm pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl"
+                className="fixed w-32 h-32 border-2 border-neon-cyan/50 backdrop-blur-md pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl bg-white/5 rounded-none"
                 style={{ left: mousePos.x, top: mousePos.y }}
               >
-                <div className="w-1 h-1 bg-neon-cyan rounded-full"></div>
-                {/* In a real implementation, we'd render a zoomed canvas slice here */}
+                <div className="w-0.5 h-4 bg-neon-cyan/80 absolute"></div>
+                <div className="w-4 h-0.5 bg-neon-cyan/80 absolute"></div>
               </div>
             )}
           </div>
@@ -229,7 +237,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
               </div>
               <button onClick={() => setPolyPoints(p => p.slice(0, -1))} className="p-2 hover:bg-white/10 rounded-lg text-slate-400"><CornerUpLeft size={16} /></button>
               {(polyPoints.length > 2) && (
-                <button onClick={() => { setIsClosed(true); setStep(MeasureStep.REPORT) }} className="bg-neon-emerald text-slate-900 px-4 py-2 rounded-lg font-bold text-xs shadow-lg shadow-neon-emerald/20 hover:scale-105 transition-transform">
+                <button onClick={() => { setIsClosed(true); setStep(MeasureStep.REPORT) }} className="bg-neon-emerald text-slate-900 px-4 py-2 font-bold text-xs shadow-lg shadow-neon-emerald/20 hover:scale-105 transition-transform">
                   Finish
                 </button>
               )}
@@ -241,7 +249,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
 
       {/* --- REPORT SHEET (BottomSheet) --- */}
       <div className={`
-            absolute bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-2xl border-t border-white/10 rounded-t-[2.5rem] p-8 shadow-2xl transition-transform duration-500 z-50
+            absolute bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-2xl border-t border-white/10 p-8 shadow-2xl transition-transform duration-500 z-50
             ${step === MeasureStep.REPORT ? 'translate-y-0' : 'translate-y-[110%]'}
         `}>
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center md:items-start">

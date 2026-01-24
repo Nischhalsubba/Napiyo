@@ -44,11 +44,11 @@ const App: React.FC = () => {
       </div>
 
       {/* Main Glass Canvas */}
-      <main className="absolute inset-4 md:inset-8 bottom-24 md:bottom-28 rounded-[2.5rem] glass-panel overflow-hidden flex flex-col">
+      <main className="absolute inset-4 md:inset-8 bottom-24 md:bottom-28 glass-panel overflow-hidden flex flex-col">
         {/* Top Header */}
         <header className="h-20 px-8 flex items-center justify-between border-b border-glass-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-lg shadow-neon-purple/20">
+            <div className="w-10 h-10 bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-lg shadow-neon-purple/20">
               <span className="font-display font-bold text-white text-lg">N.</span>
             </div>
             <h1 className="font-display font-bold text-xl tracking-tight text-white">
@@ -61,7 +61,7 @@ const App: React.FC = () => {
               <Zap size={16} className="text-neon-purple group-hover:text-white transition-colors" />
               <span className="text-xs font-bold text-neon-purple group-hover:text-white transition-colors">Upgrade</span>
             </button>
-            <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 overflow-hidden">
+            <div className="w-10 h-10 bg-slate-800 border border-white/10 overflow-hidden">
               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=NapiyoUser" alt="User" />
             </div>
           </div>
@@ -76,7 +76,7 @@ const App: React.FC = () => {
       </main>
 
       {/* Floating Dock (Mac Style) */}
-      <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl z-50 transition-all hover:scale-105 hover:bg-slate-900/80">
+      <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 transition-all hover:scale-105 hover:bg-slate-900/80">
         <DockItem
           active={activeTab === 'CONVERT'}
           onClick={() => setActiveTab('CONVERT')}
@@ -115,7 +115,7 @@ const DockItem = ({ active, onClick, icon, label, isMain = false }: any) => (
     onClick={onClick}
     className={`
       group relative flex items-center justify-center transition-all duration-300
-      ${isMain ? 'w-16 h-16 rounded-2xl mx-1' : 'w-12 h-12 rounded-xl'}
+      ${isMain ? 'w-16 h-16 mx-1' : 'w-12 h-12'}
       ${active
         ? 'bg-gradient-to-t from-neon-purple/80 to-indigo-500 text-white shadow-lg shadow-neon-purple/30 -translate-y-2'
         : 'hover:bg-white/10 text-slate-400 hover:text-white hover:-translate-y-1'}
