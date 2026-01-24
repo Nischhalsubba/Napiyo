@@ -113,16 +113,16 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
   const hills = getHillsBreakdown(areaSqFt);
 
   return (
-    <div className="h-full w-full flex flex-col relative overflow-hidden bg-slate-900 text-slate-100">
+    <div className="h-full w-full flex flex-col relative overflow-hidden bg-brand-100 text-slate-900">
 
       {/* --- UPLOAD VIEW --- */}
       {step === MeasureStep.UPLOAD && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-enter z-10 cursor-pointer" onClick={() => document.getElementById('file-upload')?.click()}>
-          <div className="w-32 h-32 bg-brand-600/10 rounded-full flex items-center justify-center mb-8 border-2 border-dashed border-brand-600/30 animate-pulse-slow">
-            <Upload size={48} className="text-brand-300" />
+          <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-8 border-2 border-dashed border-brand-600/30 animate-pulse-slow shadow-xl">
+            <Upload size={48} className="text-brand-600" />
           </div>
-          <h2 className="text-3xl font-display font-medium text-white mb-2">Tap to Measure</h2>
-          <p className="text-brand-100/60 text-lg">Upload a photo of the land map</p>
+          <h2 className="text-3xl font-display font-medium text-slate-900 mb-2">Tap to Measure</h2>
+          <p className="text-slate-500 text-lg">Upload a photo of the land map</p>
           <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
         </div>
       )}
@@ -192,9 +192,9 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
 
           {/* Scale Prompt */}
           {step === MeasureStep.CALIBRATE && !showDistInput && (
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur border border-white/10 px-6 py-3 rounded-full flex items-center gap-3 animate-enter pointer-events-none">
-              <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
-              <span className="font-bold text-white text-sm">Tap 2 points on the scale bar</span>
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-xl border border-brand-600/20 px-6 py-3 rounded-full flex items-center gap-3 animate-enter pointer-events-none shadow-lg">
+              <div className="w-2 h-2 bg-brand-600 rounded-full animate-pulse"></div>
+              <span className="font-bold text-slate-900 text-sm">Tap 2 points on the scale bar</span>
             </div>
           )}
 
@@ -229,18 +229,18 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
           {/* Trace Prompt */}
           {step === MeasureStep.TRACE && (
             <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 pointer-events-none">
-              <div className="bg-slate-900/90 backdrop-blur border border-white/10 px-6 py-3 rounded-full flex items-center gap-3 animate-enter">
+              <div className="bg-white/90 backdrop-blur-xl border border-brand-600/20 px-6 py-3 rounded-full flex items-center gap-3 animate-enter shadow-lg">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="font-bold text-white text-sm">Trace the boundaries</span>
+                <span className="font-bold text-slate-900 text-sm">Trace the boundaries</span>
               </div>
 
               {/* Action Buttons (Pointer Events Allowed) */}
               <div className="flex items-center gap-2 pointer-events-auto">
-                <button onClick={() => setPolyPoints(p => p.slice(0, -1))} className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur">
+                <button onClick={() => setPolyPoints(p => p.slice(0, -1))} className="p-3 bg-white hover:bg-brand-100 rounded-full text-slate-600 backdrop-blur shadow-lg border border-brand-600/10">
                   <RotateCcw size={20} />
                 </button>
                 {polyPoints.length > 2 && (
-                  <button onClick={() => closePolygon()} className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold rounded-full shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
+                  <button onClick={() => closePolygon()} className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
                     <Check size={18} /> Finish
                   </button>
                 )}

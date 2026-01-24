@@ -9,7 +9,7 @@ interface SegmentedControlProps {
 
 const SegmentedControl: React.FC<SegmentedControlProps> = ({ options, value, onChange, className }) => {
     return (
-        <div className={`glass-panel p-1 flex items-center rounded-none bg-white/5 border border-white/10 ${className}`}>
+        <div className={`glass-panel p-1 flex items-center rounded-none bg-white/40 border border-brand-600/10 ${className}`}>
             {options.map((opt) => {
                 const isActive = value === opt.value;
                 return (
@@ -19,8 +19,8 @@ const SegmentedControl: React.FC<SegmentedControlProps> = ({ options, value, onC
                         className={`
               flex-1 py-3 px-4 text-sm font-bold uppercase tracking-wider transition-all rounded-none
               ${isActive
-                                ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20'
-                                : 'text-brand-100/60 hover:text-white hover:bg-white/5'}
+                                ? 'bg-white text-brand-600 shadow-md shadow-brand-600/10 border border-brand-600/10'
+                                : 'text-slate-500 hover:text-slate-900 hover:bg-white/20'}
             `}
                     >
                         {opt.label}

@@ -1,17 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --aurora-1: #3674B5;
-  --aurora-2: #578FCA;
-  --aurora-3: #A1E3F9;
+  --aurora-1: #FFD6BA;
+  --aurora-2: #FF9E7D;
+  --aurora-3: #FFDCDC;
 }
 
 body {
-  font-family: 'Manrope', sans-serif;
-  background-color: #020617;
-  /* Slate 950 */
-  color: #f8fafc;
-  overflow: hidden;
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #FFF2EB;
+  /* Light Peach Background */
+  color: #2D2420;
+  /* Deep Brown Text */
+  font-family: 'Outfit', sans-serif;
 }
 
 /* Aurora Background */

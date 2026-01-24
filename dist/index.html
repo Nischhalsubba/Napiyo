@@ -7,7 +7,7 @@
   <title>Hamro Tools — Napi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <script>
     tailwind.config = {
@@ -15,24 +15,25 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Inter"', 'system-ui', 'sans-serif'],
-            display: ['"Inter"', 'sans-serif'],
+            sans: ['"Outfit"', 'system-ui', 'sans-serif'],
+            display: ['"Outfit"', 'sans-serif'],
           },
           colors: {
             slate: {
               850: '#1e293b',
-              900: '#0f172a',
-              950: '#020617',
+              900: '#2D2420', // Deep Warm Brown replacement for Slate 900
+              950: '#1A1412',
             },
             brand: {
-              600: '#3674B5', // Strong Blue
-              500: '#578FCA', // Soft Blue
-              300: '#A1E3F9', // Sky
-              100: '#D1F8EF', // Minty White
+              600: '#FF9E7D', // Darker Peach (Primary)
+              500: '#FFD6BA', // Peach (Secondary)
+              300: '#FFE8CD', // Cream (Accent)
+              100: '#FFF2EB', // Light Peach (Background)
+              50: '#FFFFFF',  // Surface
             },
             glass: {
-              light: 'rgba(255, 255, 255, 0.05)',
-              border: 'rgba(255, 255, 255, 0.1)',
+              light: 'rgba(255, 255, 255, 0.4)', // More opaque for light mode
+              border: 'rgba(45, 36, 32, 0.08)',   // Darker border for contrast
             }
           },
           animation: {
@@ -74,8 +75,8 @@
       animation: float-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-92-N_VKo.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CjqTvQrG.css">
+  <script type="module" crossorigin src="/assets/index-8-IBd5ev.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DazERgtP.css">
 </head>
 
 <body class="bg-surface-50 text-slate-800 antialiased selection:bg-primary-200 selection:text-primary-900">
