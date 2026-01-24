@@ -146,7 +146,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
             onMouseMove={handleMouseMove}
             onClick={handleCanvasClick}
           >
-            <img src={image} className="max-w-full max-h-[85vh] opacity-90" alt="Map" />
+            <img src={image} className="w-full h-full object-contain opacity-90" alt="Map" />
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
               {/* Scale Line */}
               {scalePoints.map((p, i) => (
@@ -186,11 +186,11 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
             {/* Custom Cursor / Magnifier */}
             {step !== MeasureStep.REPORT && (
               <div
-                className="fixed w-32 h-32 border-2 border-neon-cyan/50 backdrop-blur-md pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl bg-white/5 rounded-none"
-                style={{ left: mousePos.x, top: mousePos.y }}
+                className="fixed w-32 h-32 border-2 border-brand-300/50 backdrop-blur-md pointer-events-none z-50 flex items-center justify-center shadow-2xl bg-white/5 rounded-full"
+                style={{ left: mousePos.x - 100, top: mousePos.y - 100 }}
               >
-                <div className="w-0.5 h-4 bg-neon-cyan/80 absolute"></div>
-                <div className="w-4 h-0.5 bg-neon-cyan/80 absolute"></div>
+                <div className="w-0.5 h-4 bg-brand-300/80 absolute"></div>
+                <div className="w-4 h-0.5 bg-brand-300/80 absolute"></div>
               </div>
             )}
           </div>
