@@ -64,7 +64,7 @@ const VisualizeScreen: React.FC<VisualizeScreenProps> = ({ initialArea, onBack }
         ctx.fillRect(cx - drawW / 2, cy - drawH / 2, drawW, drawH);
 
         // Dimensions text
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#cbd5e1';
         ctx.font = '12px Inter';
         ctx.textAlign = 'center';
         ctx.fillText(`~${formatDecimal(Math.sqrt(initialArea))} ft`, cx, cy + drawH / 2 + 20);

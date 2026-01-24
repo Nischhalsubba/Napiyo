@@ -57,30 +57,50 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
     }
   };
 
-  const handleExtractUrl = () => {
+  const usePlaceholder = () => {
+    const MOCK_MAP = "https://placehold.co/1200x800/1e293b/FFFFFF/png?text=Satellite+Map+Preview";
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+      setImgDims({ w: img.width, h: img.height });
+      setImage(MOCK_MAP);
+      setIsExtracting(false);
+      setStep(MeasureStep.CALIBRATE);
+    };
+    img.src = MOCK_MAP;
+  };
+
+  const handleExtractUrl = async () => {
     if (!url) return;
     setIsExtracting(true);
 
-    // Simulate extraction - SAFE FALLBACK
-    setTimeout(() => {
-      // Use a reliable, simple placeholder if extraction "fails" or just simulated
-      // A simple 800x600 grid pattern for reliability
-      const MOCK_MAP = "https://placehold.co/1200x800/1e293b/FFFFFF/png?text=Satellite+Map+Preview";
+    try {
+      // Use Microlink API for real screenshot
+      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`);
+      const data = await response.json();
+      const screenshotUrl = data?.screenshot?.url;
 
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.onload = () => {
-        setImgDims({ w: img.width, h: img.height });
-        setImage(MOCK_MAP);
-        setIsExtracting(false);
-        setStep(MeasureStep.CALIBRATE);
-      };
-      img.onerror = () => {
-        alert("Could not extract image. Please upload manually.");
-        setIsExtracting(false);
-      };
-      img.src = MOCK_MAP;
-    }, 1500);
+      if (screenshotUrl) {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+          setImgDims({ w: img.width, h: img.height });
+          setImage(screenshotUrl);
+          setIsExtracting(false);
+          setStep(MeasureStep.CALIBRATE);
+        };
+        img.onerror = () => {
+          console.warn("Screenshot failed to load image data");
+          usePlaceholder();
+        };
+        img.src = screenshotUrl;
+      } else {
+        throw new Error("No screenshot generated");
+      }
+    } catch (e) {
+      console.error("Extraction error:", e);
+      usePlaceholder();
+    }
   };
 
   // Safe Click Handler
