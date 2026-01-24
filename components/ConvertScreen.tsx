@@ -43,7 +43,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave }) => {
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-bl-[4rem] -z-0"></div>
 
           <div className="relative z-10">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 block">Input Value</label>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 block">Input Value (Rakham)</label>
 
             <div className="flex items-center gap-4 mb-6">
               <input
@@ -113,7 +113,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave }) => {
             onClick={handleSave}
             className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-600 shadow-sm border border-slate-100 hover:shadow-md hover:text-slate-900 transition-all text-sm font-bold"
           >
-            <Save size={18} /> Save Calculation
+            <Save size={18} /> Save This
           </button>
         </div>
 
@@ -156,7 +156,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave }) => {
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <ArrowLeftRight size={64} />
           </div>
-          <div className="font-bold text-white text-base mb-1">Did you know?</div>
+          <div className="font-bold text-white text-base mb-1">Quick Fact</div>
           <p className="leading-relaxed">
             1 Ropani is exactly 5,476 sq. ft., which is roughly one-eighth of an acre. In the Terai, the Bigha system is used, where 1 Bigha equals 13 Ropanis.
           </p>

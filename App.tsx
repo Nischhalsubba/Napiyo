@@ -51,13 +51,13 @@ const App: React.FC = () => {
             active={activeTab === 'CONVERT'}
             onClick={() => setActiveTab('CONVERT')}
             icon={<Calculator size={24} />}
-            tooltip="Convert"
+            tooltip="Converter"
           />
           <NavButton
             active={activeTab === 'MEASURE'}
             onClick={() => setActiveTab('MEASURE')}
             icon={<Map size={24} />}
-            tooltip="Measure"
+            tooltip="Measure Map (Napi)"
           />
           <NavButton
             active={activeTab === 'SAVED'}
@@ -88,7 +88,7 @@ const App: React.FC = () => {
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">
                 {activeTab === 'CONVERT' && 'Unit Converter'}
                 {activeTab === 'MEASURE' && 'Smart Measure'}
-                {activeTab === 'SAVED' && 'Saved Items'}
+                {activeTab === 'SAVED' && 'Saved History'}
               </h1>
               <span className="px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-bold tracking-wide uppercase">v2.0 Beta</span>
             </div>

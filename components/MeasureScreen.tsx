@@ -267,14 +267,14 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
               active={scaleMode}
               onClick={() => setScaleMode(true)}
               icon={<Ruler size={18} />}
-              label="Set Scale"
+              label="1. Set Scale (Naap)"
             />
             <div className="w-px h-6 bg-slate-200 mx-1"></div>
             <ToolBtn
               active={!scaleMode && !isClosed}
               onClick={() => setScaleMode(false)}
               icon={<MousePointer2 size={18} />}
-              label="Boundary"
+              label="2. Draw Area (Kitta)"
             />
 
             {pixelsPerFt && isClosed && (
@@ -343,17 +343,54 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
             </div>
           </div>
 
-          {/* Smart Stats Overlay (Bottom Right) */}
+          {/* Smart Stats Overlay (Large Central Modal) */}
           {isClosed && pixelsPerFt && (
-            <div className="absolute bottom-6 right-6 z-30 bg-white/90 backdrop-blur-md p-5 rounded-[1.5rem] shadow-glass border border-white/50 w-64 animate-enter">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Area</div>
-              <div className="text-3xl font-black text-slate-800 mb-4">{formatDecimal(areaSqFt)} <span className="text-sm text-slate-400">sq.ft</span></div>
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-enter">
+              <div className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-sm w-full border border-white/50 relative">
+                <button
+                  onClick={() => { setIsClosed(false); }}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 bg-slate-50 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-bold p-2 bg-slate-50 rounded-xl">
-                  <span className="text-slate-400">Ropani</span>
-                  <span>{formatDecimal(areaSqFt / 5476, 2)}</span>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
+                    <Check size={32} strokeWidth={3} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-1">Calculation Complete</h3>
+                  <p className="text-slate-500 font-medium">Here is your plot size</p>
                 </div>
+
+                <div className="bg-slate-50 rounded-2xl p-6 text-center mb-6 border border-slate-100">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Area</div>
+                  <div className="text-4xl font-black text-slate-900">{formatDecimal(areaSqFt)} <span className="text-lg text-slate-400 font-bold">sq.ft</span></div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                    <span className="font-bold text-slate-500">Ropani System</span>
+                    <span className="font-mono font-bold text-slate-900 border-b-2 border-primary-200">
+                      {getHillsBreakdown(areaSqFt).ropani}-{getHillsBreakdown(areaSqFt).aana}-{getHillsBreakdown(areaSqFt).paisa}-{formatDecimal(getHillsBreakdown(areaSqFt).daam, 1)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                    <span className="font-bold text-slate-500">Bigha System</span>
+                    <span className="font-mono font-bold text-slate-900 border-b-2 border-primary-200">
+                      {getTeraiBreakdown(areaSqFt).bigha}-{getTeraiBreakdown(areaSqFt).kattha}-{formatDecimal(getTeraiBreakdown(areaSqFt).dhur, 1)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => onSave({ id: Date.now().toString(), name: 'Measured Plot', sqFt: areaSqFt, date: Date.now(), type: 'MEASURED', tags: [] })}
+                    className="flex-1 bg-primary-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Save size={20} /> Save Result
+                  </button>
+                </div>
+
               </div>
             </div>
           )}
