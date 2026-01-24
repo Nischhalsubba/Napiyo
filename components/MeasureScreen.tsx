@@ -21,7 +21,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
   const [imgDims, setImgDims] = useState({ w: 0, h: 0 });
   const [mimeType, setMimeType] = useState<string>('image/jpeg');
   
-  // AI State
+  // Analysis State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiPoints, setAiPoints] = useState<{x: number, y: number}[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // --- AI Analysis Logic ---
+  // --- Image Analysis Logic ---
   const analyzeImage = async (base64Data: string, mime: string) => {
     setIsAnalyzing(true);
     setAiError(null);
@@ -85,7 +85,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
         }
       }
     } catch (e) {
-      console.error("AI Analysis failed", e);
+      console.error("Analysis failed", e);
       setAiError("Could not analyze image automatically.");
     } finally {
       setIsAnalyzing(false);
@@ -106,7 +106,7 @@ const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
           setImgDims({ w: img.width, h: img.height });
           setImage(result);
           setStep(MeasureStep.SCALE);
-          // Trigger AI Analysis
+          // Trigger Analysis
           analyzeImage(result, file.type);
         };
         img.src = result;

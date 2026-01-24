@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="Napiyo Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # Napiyo
 
 **Napiyo** is a premier land measurement and unit conversion utility built specifically for the Nepalese context. Bridging the gap between traditional measurement systems and modern technology, Napiyo provides an intuitive interface for real estate professionals, landowners, and engineers to calculate and visualize land areas with precision.
