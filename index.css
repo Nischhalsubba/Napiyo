@@ -1,25 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --aurora-1: #FFD6BA;
-  --aurora-2: #FF9E7D;
-  --aurora-3: #FFDCDC;
+  --aurora-1: #2563eb;
+  /* Blue */
+  --aurora-2: #3b82f6;
+  --aurora-3: #6366f1;
+  /* Indigo */
+}
+
+/* Enforce 100vh Layout */
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* No global scroll */
 }
 
 body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #FFF2EB;
-  /* Light Peach Background */
-  color: #2D2420;
-  /* Deep Brown Text */
-  font-family: 'Outfit', sans-serif;
+  background-color: #020617;
+  /* Deep Slate */
+  color: #f8fafc;
+  /* White Text */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Aurora Background */
+/* Clean Professional Background */
 .bg-aurora {
   position: fixed;
   top: 0;
@@ -27,67 +38,24 @@ body {
   width: 100vw;
   height: 100vh;
   z-index: -1;
-  background: transparent;
-  /* Allow body Peach color to show */
-  overflow: hidden;
+  background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 60%);
 }
 
-.aurora-blob {
-  position: absolute;
-  filter: blur(80px);
-  opacity: 0.4;
-  animation: float 20s infinite ease-in-out alternate;
-  border-radius: 50%;
-}
-
-.blob-1 {
-  top: -10%;
-  left: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: var(--aurora-1);
-  animation-delay: 0s;
-}
-
-.blob-2 {
-  bottom: -10%;
-  right: -10%;
-  width: 60vw;
-  height: 60vw;
-  background: var(--aurora-2);
-  animation-delay: -5s;
-}
-
+.aurora-blob,
+.blob-1,
+.blob-2,
 .blob-3 {
-  top: 40%;
-  left: 40%;
-  width: 40vw;
-  height: 40vw;
-  background: var(--aurora-3);
-  animation-delay: -10s;
+  display: none;
+  /* Disable noisy blobs */
 }
 
-@keyframes float {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate(30px, 50px) scale(1.1);
-  }
-
-  100% {
-    transform: translate(-20px, -30px) scale(0.9);
-  }
-}
-
-/* Glass Components Light Mode */
+/* Professional Card Styles */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(45, 36, 32, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(45, 36, 32, 0.05);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .glass-card {

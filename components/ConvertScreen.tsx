@@ -12,7 +12,6 @@ interface ConvertScreenProps {
 const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) => {
   const [val, setVal] = useState<string>('1');
   const [unit, setUnit] = useState<string>('ROPANI');
-  const [showDetails, setShowDetails] = useState(false);
 
   // Derived
   const numVal = parseFloat(val) || 0;
@@ -45,13 +44,13 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
           <select
             value={unit}
             onChange={e => setUnit(e.target.value)}
-            className="appearance-none bg-brand-600/5 hover:bg-brand-600/10 text-brand-600 font-bold text-4xl py-4 pl-8 pr-16 rounded-2xl cursor-pointer transition-colors focus:outline-none text-center min-w-[200px]"
+            className="appearance-none bg-slate-800 hover:bg-slate-700 text-white font-bold text-4xl py-4 pl-8 pr-16 rounded-2xl cursor-pointer transition-colors focus:outline-none text-center min-w-[200px] border border-white/10"
           >
             {Object.values(UNITS).map(u => (
-              <option key={u.id} value={u.id} className="bg-white text-lg">{u.name}</option>
+              <option key={u.id} value={u.id} className="bg-slate-900 text-lg">{u.name}</option>
             ))}
           </select>
-          <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-600/50 pointer-events-none" size={32} />
+          <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={32} />
         </div>
       </div>
 
@@ -59,49 +58,48 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
       <div className="flex-1 flex flex-col justify-start items-center pt-10 border-t border-white/5">
         <div className="text-slate-500 font-bold text-sm uppercase tracking-widest mb-4">That is equal to</div>
 
-        <div className="text-7xl font-display font-black text-brand-600 mb-2 tracking-tight">
-          {fmt(sqFt)} <span className="text-3xl text-slate-400 font-bold">sq.ft</span>
+        <div className="text-7xl font-display font-black text-brand-500 mb-2 tracking-tight">
+          {fmt(sqFt)} <span className="text-3xl text-slate-500 font-bold">sq.ft</span>
         </div>
 
         {/* Simple Actions */}
-        <div className="flex gap-6 mt-8">
-          <button onClick={() => setShowDetails(!showDetails)} className="text-slate-500 hover:text-brand-600 flex items-center gap-2 font-bold text-sm bg-brand-600/5 px-4 py-2 rounded-full transition-colors">
-            {showDetails ? 'Hide Details' : 'Show Details'}
-          </button>
-          <button onClick={() => onVisualize(sqFt)} className="text-brand-600 hover:text-brand-800 flex items-center gap-2 font-bold text-sm bg-brand-600/10 px-4 py-2 rounded-full transition-colors">
+        <div className="flex gap-6 mt-8 mb-8">
+          <button onClick={() => onVisualize(sqFt)} className="text-brand-400 hover:text-white flex items-center gap-2 font-bold text-sm bg-slate-800 px-4 py-2 rounded-full transition-colors border border-white/10 hover:border-brand-500">
             <Eye size={16} /> Visualize Size
           </button>
         </div>
 
-        {/* Collapsible Details */}
-        {showDetails && (
-          <div className="w-full max-w-md mt-8 grid grid-cols-2 gap-4 animate-enter">
-            <div className="bg-white/60 border border-brand-600/10 p-4 rounded-xl">
-              <div className="text-[10px] uppercase font-bold text-slate-500">Hill System</div>
-              <div className="text-xl font-mono font-bold text-slate-900 mt-1">
-                {hills.ropani}-{hills.aana}-{hills.paisa}-{formatDecimal(hills.daam, 1)}
-              </div>
+        {/* Dual Unit View (Permanent) */}
+        <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4 animate-enter pb-8">
+          <div className="bg-slate-800 border border-white/10 p-6 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
+            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Hill System</div>
+            <div className="text-2xl font-mono font-bold text-white relative z-10">
+              {hills.ropani}-{hills.aana}-{hills.paisa}-{formatDecimal(hills.daam, 1)}
             </div>
-            <div className="bg-white/60 border border-brand-600/10 p-4 rounded-xl">
-              <div className="text-[10px] uppercase font-bold text-slate-500">Terai System</div>
-              <div className="text-xl font-mono font-bold text-slate-900 mt-1">
-                {terai.bigha}-{terai.kattha}-{formatDecimal(terai.dhur, 1)}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                onSave({ id: Date.now().toString(), title: `${val} ${UNITS[unit].name}`, sqFt, date: Date.now(), type: 'CONVERTED', tags: [] });
-                alert("Saved");
-              }}
-              className="col-span-2 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
-            >
-              <Save size={18} /> Save Calculation
-            </button>
+            <div className="text-[10px] text-slate-500 font-mono mt-1">Ropani-Aana-Paisa-Daam</div>
           </div>
-        )}
+
+          <div className="bg-slate-800 border border-white/10 p-6 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
+            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Terai System</div>
+            <div className="text-2xl font-mono font-bold text-white relative z-10">
+              {terai.bigha}-{terai.kattha}-{formatDecimal(terai.dhur, 1)}
+            </div>
+            <div className="text-[10px] text-slate-500 font-mono mt-1">Bigha-Kattha-Dhur</div>
+          </div>
+
+          <button
+            onClick={() => {
+              onSave({ id: Date.now().toString(), title: `${val} ${UNITS[unit].name}`, sqFt, date: Date.now(), type: 'CONVERTED', tags: [] });
+              alert("Saved");
+            }}
+            className="col-span-1 md:col-span-2 py-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg"
+          >
+            <Save size={18} /> Save to History
+          </button>
+        </div>
       </div>
 
-    </div>
+    </div >
   );
 };
 

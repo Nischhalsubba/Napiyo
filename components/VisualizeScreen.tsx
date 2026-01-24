@@ -1,173 +1,122 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Download, Info } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { ArrowLeft, Box } from 'lucide-react';
 import { formatDecimal } from '../utils/conversions';
-import SegmentedControl from './SegmentedControl';
 
 interface VisualizeScreenProps {
     initialArea: number;
     onBack: () => void;
 }
 
+const CONSTANTS = {
+    FOOTBALL_FIELD: 57600, // standard approx sq ft
+    TENNIS_COURT: 2800,
+    KING_BED: 42,
+    PING_PONG_TABLE: 45
+};
+
 const VisualizeScreen: React.FC<VisualizeScreenProps> = ({ initialArea, onBack }) => {
-    const [area, setArea] = useState(initialArea);
-    const [ratio, setRatio] = useState('1:1');
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    // Derived dimensions
-    const getDimensions = () => {
-        // ratio is w:h
-        const [wRatio, hRatio] = ratio.split(':').map(Number);
-        // area = w * h
-        // w = h * (wRatio/hRatio)
-        // area = [h * (wRatio/hRatio)] * h
-        // area = h^2 * (wRatio/hRatio)
-        // h = sqrt(area / (wRatio/hRatio))
-
-        const r = wRatio / hRatio;
-        const h = Math.sqrt(area / r);
-        const w = area / h;
-        return { w, h };
-    };
-
-    const { w: realW, h: realH } = getDimensions();
-
+    // Draw rectangle logic - Clean Version
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // container size
-        const container = canvas.parentElement;
-        if (!container) return;
-        const maxW = container.clientWidth;
-        const maxH = container.clientHeight;
+        // Resizing
+        canvas.width = canvas.parentElement?.offsetWidth || 800;
+        canvas.height = canvas.parentElement?.offsetHeight || 600;
 
-        // Set canvas size (HiDPI)
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = maxW * dpr;
-        canvas.height = maxH * dpr;
-        canvas.style.width = `${maxW}px`;
-        canvas.style.height = `${maxH}px`;
-        ctx.scale(dpr, dpr);
+        const ratio = 1.5;
 
-        // Drawing Logic
-        ctx.clearRect(0, 0, maxW, maxH);
+        // Scale Logic
+        const MAX_REF = 60000;
+        const scaleFactor = Math.min(0.8, Math.sqrt(initialArea / MAX_REF));
 
-        // Add padding
-        const pad = 40;
-        const availW = maxW - pad * 2;
-        const availH = maxH - pad * 2;
+        const drawW = (canvas.width * 0.8) * scaleFactor;
+        const drawH = drawW / ratio;
 
-        // Calculate scale to fit
-        // we want to draw a box of realW x realH inside availW x availH
-        // Scale = pixels per foot
-        const scaleX = availW / realW;
-        const scaleY = availH / realH;
-        const scale = Math.min(scaleX, scaleY); // fit uniform
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const drawW = realW * scale;
-        const drawH = realH * scale;
+        // Clean Grid (Engineering Style)
+        ctx.strokeStyle = '#334155'; // Slate-700
+        ctx.lineWidth = 1;
+        const gridSize = 40;
 
-        const startX = (maxW - drawW) / 2;
-        const startY = (maxH - drawH) / 2;
-
-        // Draw Shape
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.1)'; // neon-purple/10
-        ctx.strokeStyle = '#8b5cf6'; // neon-purple
-        ctx.lineWidth = 2;
-
-        // Draw fill
+        // Draw subtle grid
         ctx.beginPath();
-        ctx.rect(startX, startY, drawW, drawH);
-        ctx.fill();
+        for (let x = 0; x < canvas.width; x += gridSize) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
+        for (let y = 0; y < canvas.height; y += gridSize) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
         ctx.stroke();
 
-        // Draw Dimensions Text
-        ctx.fillStyle = '#94a3b8'; // slate-400
-        ctx.font = 'bold 12px Manrope';
+        // Blueprint Rect
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        ctx.shadowBlur = 0; // No neon
+        ctx.strokeStyle = '#60a5fa'; // Blue-400
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+
+        // Fill
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.1)'; // Brand Blue Tint
+        ctx.fillRect(cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+
+        // Dimensions text
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '12px Inter';
         ctx.textAlign = 'center';
+        ctx.fillText(`~${formatDecimal(Math.sqrt(initialArea))} ft`, cx, cy + drawH / 2 + 20);
 
-        // Width Label (Top)
-        ctx.fillText(`${formatDecimal(realW)} ft`, startX + drawW / 2, startY - 10);
+    }, [initialArea]);
 
-        // Height Label (Left)
-        ctx.save();
-        ctx.translate(startX - 15, startY + drawH / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`${formatDecimal(realH)} ft`, 0, 0);
-        ctx.restore();
-
-        // Context Human Scale (e.g., a person is ~1.5ft wide shoulder to shoulder? No, maybe simpler just grid)
-        // Draw reference grid (10ft lines) if needed, but keeping it clean for now.
-
-    }, [area, ratio, realW, realH]);
-
-    const handleDownload = () => {
-        // Just a placeholder alert for now as per "Download card" spec request
-        // Ideally we'd use canvas.toDataURL()
-        const link = document.createElement('a');
-        link.download = `napi-visualize-${Math.round(area)}.png`;
-        link.href = canvasRef.current!.toDataURL();
-        link.click();
+    const getComparisons = () => {
+        if (initialArea > 10000) return { label: 'Football Fields', val: initialArea / CONSTANTS.FOOTBALL_FIELD, icon: '⚽️' };
+        if (initialArea > 1000) return { label: 'Tennis Courts', val: initialArea / CONSTANTS.TENNIS_COURT, icon: '🎾' };
+        if (initialArea > 50) return { label: 'Ping Pong Tables', val: initialArea / CONSTANTS.PING_PONG_TABLE, icon: '🏓' };
+        return { label: 'King Beds', val: initialArea / CONSTANTS.KING_BED, icon: '🛏️' };
     };
 
+    const comp = getComparisons();
+
     return (
-        <div className="h-full flex flex-col p-4 md:p-8 animate-enter relative">
-
-            <button onClick={onBack} className="absolute top-4 left-4 md:left-8 z-20 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors">
-                <ArrowLeft size={20} />
-            </button>
-
-            {/* Top Controls */}
-            <div className="flex flex-col items-center gap-6 mb-4 z-10">
-                <h2 className="text-2xl font-display font-bold text-white text-center mt-2">
-                    Visualizing <span className="text-neon-cyan">{formatDecimal(area)} sq.ft</span>
-                </h2>
-
-                <SegmentedControl
-                    options={[
-                        { label: 'Square (1:1)', value: '1:1' },
-                        { label: 'Wide (2:1)', value: '2:1' },
-                        { label: 'Long (1:3)', value: '1:3' },
-                    ]}
-                    value={ratio}
-                    onChange={setRatio}
-                    className="min-w-[300px]"
-                />
+        <div className="w-full h-full relative bg-slate-950 flex flex-col font-sans">
+            {/* Top Bar */}
+            <div className="absolute top-4 left-4 z-50">
+                <button onClick={onBack} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors rounded-lg font-bold text-sm shadow-lg">
+                    <ArrowLeft size={16} /> Back
+                </button>
             </div>
 
-            {/* Canvas Container */}
-            <div className="flex-1 w-full relative rounded-none border border-white/5 bg-slate-950/30 overflow-hidden">
-                {/* Grid Background */}
-                <div className="absolute inset-0" style={{
-                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px'
-                }}></div>
-
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-            </div>
-
-            {/* Footer Info */}
-            <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-4 p-4 glass-panel bg-white/5">
-                <div className="flex items-center gap-3 text-slate-400 text-xs">
-                    <Info size={16} className="text-neon-blue" />
-                    <span>Visualization is for understanding size only. Real plots vary in shape.</span>
+            {/* Info Card */}
+            <div className="absolute top-4 right-4 z-20 bg-slate-900 border border-white/10 rounded-xl p-6 shadow-xl max-w-sm">
+                <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Coverage</div>
+                <div className="text-4xl font-bold text-white mb-4">
+                    {formatDecimal(initialArea)} <span className="text-lg text-slate-400 font-medium">sq.ft</span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="text-right">
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Approx Dimensions</div>
-                        <div className="text-white font-mono font-bold">
-                            {formatDecimal(realW)}' × {formatDecimal(realH)}'
+                <div className="border-t border-white/10 pt-4">
+                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Equivalent To</div>
+                    <div className="flex items-center gap-4">
+                        <div className="text-4xl grayscale opacity-80">{comp.icon}</div>
+                        <div>
+                            <div className="text-2xl font-bold text-brand-400">x {formatDecimal(comp.val)}</div>
+                            <div className="text-sm text-slate-300 font-bold">{comp.label}</div>
                         </div>
                     </div>
-                    <button onClick={handleDownload} className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-none border border-white/10 transition-colors">
-                        <Download size={20} />
-                    </button>
                 </div>
             </div>
 
+            {/* Canvas Layer */}
+            <div className="flex-1 relative overflow-hidden bg-slate-950">
+                <canvas ref={canvasRef} className="w-full h-full block" />
+            </div>
+
+            {/* Footer Disclaimer */}
+            <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+                <p className="text-xs text-slate-700 font-medium">Visual Representation Only • Not Geometric Scale</p>
+            </div>
         </div>
     );
 };

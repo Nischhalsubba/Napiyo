@@ -38,24 +38,20 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden text-slate-900 selection:bg-brand-500 selection:text-slate-900">
-      {/* Aurora Background Layers */}
-      <div className="bg-aurora">
-        <div className="aurora-blob blob-1"></div>
-        <div className="aurora-blob blob-2"></div>
-        <div className="aurora-blob blob-3"></div>
-      </div>
+    <div className="relative h-screen w-full overflow-hidden text-slate-100 selection:bg-brand-500 selection:text-white">
+      {/* Clean Background */}
+      <div className="fixed inset-0 z-[-1] bg-slate-950"></div>
 
       {/* Main Glass Canvas */}
       <main className="absolute inset-4 md:inset-8 bottom-24 md:bottom-28 glass-panel overflow-hidden flex flex-col">
         {/* Top Header */}
         <header className="h-20 px-8 flex items-center justify-between border-b border-glass-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-600 to-brand-500 flex items-center justify-center shadow-lg shadow-brand-600/20 rounded-xl">
+            <div className="w-10 h-10 bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/20 rounded-lg">
               <span className="font-display font-bold text-white text-lg">N.</span>
             </div>
-            <h1 className="font-display font-bold text-xl tracking-tight text-slate-900">
-              Napiyo <span className="text-xs font-mono text-brand-600 px-2 py-0.5 rounded-full bg-brand-600/10">2026 ALPHA</span>
+            <h1 className="font-display font-bold text-xl tracking-tight text-white">
+              Napiyo <span className="text-xs font-mono text-brand-300 px-2 py-0.5 rounded-md bg-brand-900/50 border border-brand-600/20">PRO</span>
             </h1>
           </div>
 
@@ -75,7 +71,7 @@ const App: React.FC = () => {
 
       {/* Floating Dock (Mac Style) - Hide on Visualize screen? Optional, but keeping for now as standard nav */}
       {activeTab !== 'VISUALIZE' && (
-        <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-white/60 backdrop-blur-2xl border border-brand-600/10 shadow-2xl z-50 transition-all hover:scale-105 hover:bg-white/80 rounded-full">
+        <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-slate-900/90 backdrop-blur-md border border-white/10 shadow-2xl z-50 transition-all hover:scale-105 rounded-full">
           <DockItem
             active={activeTab === 'CONVERT'}
             onClick={() => setActiveTab('CONVERT')}
@@ -117,8 +113,8 @@ const DockItem = ({ active, onClick, icon, label, isMain = false }: any) => (
       group relative flex items-center justify-center transition-all duration-300
       ${isMain ? 'w-16 h-16 mx-1' : 'w-12 h-12'}
       ${active
-        ? 'bg-gradient-to-t from-brand-600/80 to-brand-500 text-white shadow-lg shadow-brand-600/30 -translate-y-2'
-        : 'hover:bg-brand-600/10 text-slate-500 hover:text-brand-600 hover:-translate-y-1'}
+        ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20 -translate-y-2 font-bold'
+        : 'hover:bg-white/10 text-slate-400 hover:text-white hover:-translate-y-1'}
     `}
   >
     {icon}
