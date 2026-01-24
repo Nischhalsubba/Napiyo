@@ -60,13 +60,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-brand-600/20 to-brand-500/20 border border-brand-600/30 hover:border-brand-600/60 transition-all group">
-              <Zap size={16} className="text-brand-300 group-hover:text-white transition-colors" />
-              <span className="text-xs font-bold text-brand-300 group-hover:text-white transition-colors">Upgrade</span>
-            </button>
-            <div className="w-10 h-10 bg-slate-800 border border-white/10 overflow-hidden">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=NapiyoUser" alt="User" />
-            </div>
+            {/* Simplified: No user profile or upgrade buttons for now */}
           </div>
         </header>
 

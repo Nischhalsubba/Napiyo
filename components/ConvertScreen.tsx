@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Save, ChevronDown, Zap, Eye, Copy, MoreHorizontal } from 'lucide-react';
-import { UNITS, QUICK_CHIPS } from '../constants';
-import { toSqFt, fromSqFt, formatDecimal, getHillsBreakdown, getTeraiBreakdown } from '../utils/conversions';
+import { Save, ChevronDown, Repeat, Copy, Eye } from 'lucide-react';
+import { UNITS } from '../constants';
+import { toSqFt, formatDecimal, getHillsBreakdown, getTeraiBreakdown } from '../utils/conversions';
 import { SavedItem, UnitSystem } from '../types';
-import SegmentedControl from './SegmentedControl';
-import Toggle from './Toggle';
 
 interface ConvertScreenProps {
   onSave: (item: SavedItem) => void;
@@ -12,170 +10,97 @@ interface ConvertScreenProps {
 }
 
 const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) => {
-  // State
   const [val, setVal] = useState<string>('1');
-  const [fromUnit, setFromUnit] = useState<string>('ROPANI');
-  const [systemMode, setSystemMode] = useState<string>(UnitSystem.HILLS);
-  const [isExact, setIsExact] = useState<boolean>(false);
+  const [unit, setUnit] = useState<string>('ROPANI');
+  const [showDetails, setShowDetails] = useState(false);
 
-  // Derived Values
+  // Derived
   const numVal = parseFloat(val) || 0;
-  const sqFt = toSqFt(numVal, fromUnit);
+  const sqFt = toSqFt(numVal, unit);
   const sqM = sqFt * 0.092903;
-
   const hills = getHillsBreakdown(sqFt);
   const terai = getTeraiBreakdown(sqFt);
 
-  // Formatters
-  const fmt = (n: number) => isExact ? n.toLocaleString(undefined, { minimumFractionDigits: 4 }) : formatDecimal(n);
-
-  const handleSave = () => {
-    onSave({
-      id: Date.now().toString(),
-      name: `${val} ${UNITS[fromUnit].name} -> ${fmt(sqFt)} sq.ft`,
-      sqFt: sqFt,
-      date: Date.now(),
-      type: 'CONVERTED',
-      tags: ['Conversion', systemMode]
-    });
-    alert("Saved!");
-  };
-
-  const copyResult = () => {
-    const text = `${val} ${UNITS[fromUnit].name} = ${fmt(sqFt)} sq.ft`;
-    navigator.clipboard.writeText(text);
-    alert("Copied to clipboard");
-  };
+  // Helper
+  const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   return (
-    <div className="h-full w-full p-4 md:p-8 animate-enter overflow-y-auto flex flex-col gap-6">
+    <div className="h-full w-full flex flex-col p-6 animate-fade-in relative overflow-y-auto">
 
-      {/* Top Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <SegmentedControl
-          options={[
-            { label: 'Hills (R-A-P-D)', value: UnitSystem.HILLS },
-            { label: 'Terai (B-K-D)', value: UnitSystem.TERAI },
-            { label: 'Modern (Sq.Ft)', value: UnitSystem.MODERN },
-          ]}
-          value={systemMode}
-          onChange={setSystemMode}
-          className="w-full md:w-auto min-w-[300px]"
+      {/* --- MANTRA / QUESTION SECTION (Top Half) --- */}
+      <div className="flex-1 flex flex-col justify-center items-center gap-6 min-h-[40vh]">
+        <div className="text-slate-500 font-bold text-sm uppercase tracking-widest">I have</div>
+
+        {/* Massive Input */}
+        <input
+          type="number"
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          className="w-full text-center bg-transparent border-none text-9xl font-display font-black text-white focus:ring-0 p-0 placeholder-white/20 tracking-tighter"
+          placeholder="0"
         />
-        <Toggle
-          checked={isExact}
-          onChange={setIsExact}
-          label={isExact ? "Exact Values" : "Rounded"}
-        />
-      </div>
 
-      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 pb-20">
-
-        {/* 1. Input Card */}
-        <div className="col-span-1 md:col-span-7 glass-panel p-8 relative overflow-hidden flex flex-col justify-center min-h-[320px]">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-600/10 blur-[80px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
-
-          <div className="relative z-10 w-full">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 block">Input Value (Rakham)</label>
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-              <input
-                type="number"
-                value={val}
-                onChange={(e) => setVal(e.target.value)}
-                className="w-full md:w-auto flex-1 bg-transparent border-none text-6xl md:text-8xl font-display font-black text-white focus:ring-0 p-0 placeholder-white/10 tracking-tighter"
-                placeholder="0"
-              />
-              <div className="relative shrink-0 w-full md:w-auto">
-                <select
-                  value={fromUnit}
-                  onChange={e => setFromUnit(e.target.value)}
-                  className="w-full appearance-none bg-white/5 border border-white/10 text-white font-bold text-xl py-4 pl-6 pr-12 cursor-pointer hover:bg-white/10 transition-colors focus:outline-none focus:border-brand-500 rounded-none"
-                >
-                  {Object.values(UNITS).map(u => (
-                    <option key={u.id} value={u.id} className="bg-slate-900">{u.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" size={20} />
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Chips */}
-          <div className="mt-8 flex flex-wrap gap-2 relative z-10">
-            {QUICK_CHIPS.map((chip, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setVal(chip.val.toString()); setFromUnit(chip.unit); }}
-                className="px-3 py-1.5 bg-white/5 border border-white/5 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all uppercase tracking-wide"
-              >
-                {chip.label}
-              </button>
+        {/* Large Unit Selector */}
+        <div className="relative group">
+          <select
+            value={unit}
+            onChange={e => setUnit(e.target.value)}
+            className="appearance-none bg-white/5 hover:bg-white/10 text-brand-300 font-bold text-4xl py-4 pl-8 pr-16 rounded-2xl cursor-pointer transition-colors focus:outline-none text-center min-w-[200px]"
+          >
+            {Object.values(UNITS).map(u => (
+              <option key={u.id} value={u.id} className="bg-slate-900 text-lg">{u.name}</option>
             ))}
-          </div>
+          </select>
+          <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-300/50 pointer-events-none" size={32} />
         </div>
-
-        {/* 2. Result Card */}
-        <div className="col-span-1 md:col-span-5 bg-gradient-to-br from-brand-600/20 to-slate-900 border border-white/10 p-8 text-white relative flex flex-col justify-between shadow-2xl min-h-[320px] group">
-
-          <div>
-            <div className="text-xs font-bold text-brand-300 uppercase tracking-widest mb-4">Calculated Area</div>
-
-            {/* Primary Result */}
-            <div className="mb-2">
-              <span className="text-5xl md:text-6xl font-display font-black tracking-tight leading-none">
-                {fmt(sqFt)}
-              </span>
-              <span className="text-xl font-bold text-slate-400 ml-2">sq.ft</span>
-            </div>
-
-            {/* Secondary Result */}
-            <div className="text-slate-400 font-mono text-sm border-t border-white/10 pt-2 mt-2 inline-block">
-              {fmt(sqM)} sq. meter
-            </div>
-          </div>
-
-          {/* Context Breakdown (Dynamic) */}
-          <div className="mt-6 p-4 bg-black/20 border border-white/5">
-            {systemMode === UnitSystem.HILLS && (
-              <div>
-                <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Hill System</div>
-                <div className="text-2xl font-mono font-bold text-white">
-                  {hills.ropani}-{hills.aana}-{hills.paisa}-{isExact ? hills.daam.toFixed(4) : formatDecimal(hills.daam, 1)}
-                </div>
-                <div className="text-[10px] text-slate-600 mt-1">Ropani-Aana-Paisa-Daam</div>
-              </div>
-            )}
-            {systemMode === UnitSystem.TERAI && (
-              <div>
-                <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Terai System</div>
-                <div className="text-2xl font-mono font-bold text-white">
-                  {terai.bigha}-{terai.kattha}-{isExact ? terai.dhur.toFixed(4) : formatDecimal(terai.dhur, 1)}
-                </div>
-                <div className="text-[10px] text-slate-600 mt-1">Bigha-Kattha-Dhur</div>
-              </div>
-            )}
-            {systemMode === UnitSystem.MODERN && (
-              <div className="text-sm text-slate-400 italic">
-                Standard metric units selected. Switch system to see local units.
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="grid grid-cols-3 gap-2 mt-6">
-            <button onClick={handleSave} className="col-span-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors">
-              <Save size={16} /> Save
-            </button>
-            <button onClick={copyResult} className="col-span-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors">
-              <Copy size={16} /> Copy
-            </button>
-            <button onClick={() => onVisualize(sqFt)} className="col-span-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors shadow-lg shadow-brand-600/20">
-              <Eye size={16} /> Visualize
-            </button>
-          </div>
-        </div>
-
       </div>
+
+      {/* --- ANSWER SECTION (Bottom Half) --- */}
+      <div className="flex-1 flex flex-col justify-start items-center pt-10 border-t border-white/5">
+        <div className="text-slate-500 font-bold text-sm uppercase tracking-widest mb-4">That is equal to</div>
+
+        <div className="text-7xl font-display font-black text-brand-300 mb-2 tracking-tight">
+          {fmt(sqFt)} <span className="text-3xl text-slate-500 font-bold">sq.ft</span>
+        </div>
+
+        {/* Simple Actions */}
+        <div className="flex gap-6 mt-8">
+          <button onClick={() => setShowDetails(!showDetails)} className="text-slate-400 hover:text-white flex items-center gap-2 font-bold text-sm bg-white/5 px-4 py-2 rounded-full transition-colors">
+            {showDetails ? 'Hide Details' : 'Show Details'}
+          </button>
+          <button onClick={() => onVisualize(sqFt)} className="text-brand-300 hover:text-white flex items-center gap-2 font-bold text-sm bg-brand-600/10 px-4 py-2 rounded-full transition-colors">
+            <Eye size={16} /> Visualize Size
+          </button>
+        </div>
+
+        {/* Collapsible Details */}
+        {showDetails && (
+          <div className="w-full max-w-md mt-8 grid grid-cols-2 gap-4 animate-enter">
+            <div className="bg-white/5 p-4 rounded-xl">
+              <div className="text-[10px] uppercase font-bold text-slate-500">Hill System</div>
+              <div className="text-xl font-mono font-bold text-white mt-1">
+                {hills.ropani}-{hills.aana}-{hills.paisa}-{formatDecimal(hills.daam, 1)}
+              </div>
+            </div>
+            <div className="bg-white/5 p-4 rounded-xl">
+              <div className="text-[10px] uppercase font-bold text-slate-500">Terai System</div>
+              <div className="text-xl font-mono font-bold text-white mt-1">
+                {terai.bigha}-{terai.kattha}-{formatDecimal(terai.dhur, 1)}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                onSave({ id: Date.now().toString(), title: `${val} ${UNITS[unit].name}`, sqFt, date: Date.now(), type: 'CONVERTED', tags: [] });
+                alert("Saved");
+              }}
+              className="col-span-2 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <Save size={18} /> Save Calculation
+            </button>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };
