@@ -73,7 +73,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
 
         {/* 1. Input Card */}
         <div className="col-span-1 md:col-span-7 glass-panel p-8 relative overflow-hidden flex flex-col justify-center min-h-[320px]">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-neon-purple/10 blur-[80px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-600/10 blur-[80px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
 
           <div className="relative z-10 w-full">
             <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 block">Input Value (Rakham)</label>
@@ -89,7 +89,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
                 <select
                   value={fromUnit}
                   onChange={e => setFromUnit(e.target.value)}
-                  className="w-full appearance-none bg-white/5 border border-white/10 text-white font-bold text-xl py-4 pl-6 pr-12 cursor-pointer hover:bg-white/10 transition-colors focus:outline-none focus:border-neon-purple rounded-none"
+                  className="w-full appearance-none bg-white/5 border border-white/10 text-white font-bold text-xl py-4 pl-6 pr-12 cursor-pointer hover:bg-white/10 transition-colors focus:outline-none focus:border-brand-500 rounded-none"
                 >
                   {Object.values(UNITS).map(u => (
                     <option key={u.id} value={u.id} className="bg-slate-900">{u.name}</option>
@@ -115,10 +115,10 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
         </div>
 
         {/* 2. Result Card */}
-        <div className="col-span-1 md:col-span-5 bg-gradient-to-br from-neon-purple/20 to-slate-900 border border-white/10 p-8 text-white relative flex flex-col justify-between shadow-2xl min-h-[320px] group">
+        <div className="col-span-1 md:col-span-5 bg-gradient-to-br from-brand-600/20 to-slate-900 border border-white/10 p-8 text-white relative flex flex-col justify-between shadow-2xl min-h-[320px] group">
 
           <div>
-            <div className="text-xs font-bold text-neon-cyan uppercase tracking-widest mb-4">Calculated Area</div>
+            <div className="text-xs font-bold text-brand-300 uppercase tracking-widest mb-4">Calculated Area</div>
 
             {/* Primary Result */}
             <div className="mb-2">
@@ -169,7 +169,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
             <button onClick={copyResult} className="col-span-1 py-3 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors">
               <Copy size={16} /> Copy
             </button>
-            <button onClick={() => onVisualize(sqFt)} className="col-span-1 py-3 bg-neon-purple hover:bg-neon-purple/80 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors shadow-lg shadow-neon-purple/20">
+            <button onClick={() => onVisualize(sqFt)} className="col-span-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors shadow-lg shadow-brand-600/20">
               <Eye size={16} /> Visualize
             </button>
           </div>

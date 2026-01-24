@@ -81,7 +81,7 @@ const SavedScreen: React.FC<SavedScreenProps> = ({ items, onDelete }) => {
             placeholder="Search..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-none pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-neon-purple placeholder-slate-600"
+            className="w-full bg-white/5 border border-white/10 rounded-none pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-brand-500 placeholder-slate-600"
           />
         </div>
       </div>
@@ -112,7 +112,7 @@ const SavedScreen: React.FC<SavedScreenProps> = ({ items, onDelete }) => {
           {canCompare ? (
             <button
               onClick={() => { /* Open Modal */ }} // Ideally opens a modal, but for now inline replacement
-              className="px-4 py-2 bg-neon-purple text-white font-bold text-xs rounded-lg hover:bg-neon-purple/80 transition-colors"
+              className="px-4 py-2 bg-brand-600 text-white font-bold text-xs rounded-lg hover:bg-brand-500 transition-colors"
             >
               View Comparison
             </button>
@@ -143,8 +143,8 @@ const SavedScreen: React.FC<SavedScreenProps> = ({ items, onDelete }) => {
           </div>
 
           {/* Delta Footer */}
-          <div className="mt-8 p-6 glass-panel border border-neon-cyan/20 bg-neon-cyan/5 text-center">
-            <div className="text-xs uppercase font-bold text-neon-cyan tracking-widest mb-2">Difference</div>
+          <div className="mt-8 p-6 glass-panel border border-brand-300/20 bg-brand-300/5 text-center">
+            <div className="text-xs uppercase font-bold text-brand-300 tracking-widest mb-2">Difference</div>
             <div className="text-3xl font-mono font-bold text-white">
               {formatDecimal(Math.abs(compareItems[0].sqFt - compareItems[1].sqFt))} <span className="text-sm text-slate-400">sq.ft</span>
             </div>
@@ -166,7 +166,7 @@ const SavedCard: React.FC<{ item: SavedItem; onDelete: (id: string) => void; sel
     <div
       className={`
             group relative bg-white/5 backdrop-blur-sm p-6 shadow-sm transition-all duration-300 border cursor-pointer
-            ${selected ? 'border-neon-purple bg-neon-purple/10' : 'border-white/5 hover:border-white/20 hover:bg-white/10'}
+            ${selected ? 'border-brand-600 bg-brand-600/10' : 'border-white/5 hover:border-white/20 hover:bg-white/10'}
             rounded-none
         `}
       onClick={onToggle}
@@ -180,7 +180,7 @@ const SavedCard: React.FC<{ item: SavedItem; onDelete: (id: string) => void; sel
           {item.type}
         </span>
         <div className="flex gap-2">
-          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selected ? 'bg-neon-purple border-neon-purple' : 'border-slate-600'}`}>
+          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selected ? 'bg-brand-600 border-brand-600' : 'border-slate-600'}`}>
             {selected && <Check size={12} className="text-white" />}
           </div>
         </div>

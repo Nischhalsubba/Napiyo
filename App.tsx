@@ -38,7 +38,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden text-slate-100 selection:bg-neon-purple selection:text-white">
+    <div className="relative h-screen w-full overflow-hidden text-slate-100 selection:bg-brand-500 selection:text-white">
       {/* Aurora Background Layers */}
       <div className="bg-aurora">
         <div className="aurora-blob blob-1"></div>
@@ -51,18 +51,18 @@ const App: React.FC = () => {
         {/* Top Header */}
         <header className="h-20 px-8 flex items-center justify-between border-b border-glass-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-lg shadow-neon-purple/20">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-600 to-brand-500 flex items-center justify-center shadow-lg shadow-brand-600/20">
               <span className="font-display font-bold text-white text-lg">N.</span>
             </div>
             <h1 className="font-display font-bold text-xl tracking-tight text-white">
-              Napiyo <span className="text-xs font-mono text-neon-cyan px-2 py-0.5 rounded-full bg-neon-cyan/10">2026 ALPHA</span>
+              Napiyo <span className="text-xs font-mono text-brand-300 px-2 py-0.5 rounded-full bg-brand-300/10">2026 ALPHA</span>
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border border-neon-purple/30 hover:border-neon-purple/60 transition-all group">
-              <Zap size={16} className="text-neon-purple group-hover:text-white transition-colors" />
-              <span className="text-xs font-bold text-neon-purple group-hover:text-white transition-colors">Upgrade</span>
+            <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-brand-600/20 to-brand-500/20 border border-brand-600/30 hover:border-brand-600/60 transition-all group">
+              <Zap size={16} className="text-brand-300 group-hover:text-white transition-colors" />
+              <span className="text-xs font-bold text-brand-300 group-hover:text-white transition-colors">Upgrade</span>
             </button>
             <div className="w-10 h-10 bg-slate-800 border border-white/10 overflow-hidden">
               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=NapiyoUser" alt="User" />
@@ -123,7 +123,7 @@ const DockItem = ({ active, onClick, icon, label, isMain = false }: any) => (
       group relative flex items-center justify-center transition-all duration-300
       ${isMain ? 'w-16 h-16 mx-1' : 'w-12 h-12'}
       ${active
-        ? 'bg-gradient-to-t from-neon-purple/80 to-indigo-500 text-white shadow-lg shadow-neon-purple/30 -translate-y-2'
+        ? 'bg-gradient-to-t from-brand-600/80 to-brand-500 text-white shadow-lg shadow-brand-600/30 -translate-y-2'
         : 'hover:bg-white/10 text-slate-400 hover:text-white hover:-translate-y-1'}
     `}
   >

@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --aurora-1: #4f46e5;
-  --aurora-2: #8b5cf6;
-  --aurora-3: #06b6d4;
+  --aurora-1: #3674B5;
+  --aurora-2: #578FCA;
+  --aurora-3: #A1E3F9;
 }
 
 body {
