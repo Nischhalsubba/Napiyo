@@ -13,11 +13,18 @@ export interface UnitDefinition {
 
 export interface SavedItem {
   id: string;
-  name: string;
+  title: string;
   sqFt: number;
+  sqM?: number; // Optional, computed
   date: number;
   type: 'CONVERTED' | 'MEASURED';
-  tags: string[];
+  tags: string[]; // Keep tags for filtering if needed, or map to 'source'
+  source?: {
+    systemMode?: string;
+    roundingMode?: boolean;
+    inputValue?: string;
+    inputUnit?: string;
+  };
 }
 
 export interface Point {
@@ -25,4 +32,4 @@ export interface Point {
   y: number;
 }
 
-export type ViewState = 'CONVERT' | 'MEASURE' | 'SAVED';
+export type ViewState = 'CONVERT' | 'MEASURE' | 'SAVED' | 'VISUALIZE';

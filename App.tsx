@@ -3,35 +3,38 @@ import { Calculator, Zap, Bookmark, Map as MapIcon, Settings } from 'lucide-reac
 import ConvertScreen from './components/ConvertScreen';
 import MeasureScreen from './components/MeasureScreen';
 import SavedScreen from './components/SavedScreen';
+import VisualizeScreen from './components/VisualizeScreen';
 import { ViewState, SavedItem } from './types';
+import { loadItems, saveItems } from './lib/storage';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ViewState>('MEASURE');
+  const [activeTab, setActiveTab] = useState<ViewState>('CONVERT');
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
+  const [visualizeArea, setVisualizeArea] = useState<number>(1000);
 
+  // Load items on mount
   useEffect(() => {
-    const saved = localStorage.getItem('napi_saved_items');
-    if (saved) {
-      try {
-        setSavedItems(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved items", e);
-      }
-    }
+    const items = loadItems();
+    setSavedItems(items);
   }, []);
 
   const handleSave = (item: SavedItem) => {
     const newItems = [...savedItems, item];
     setSavedItems(newItems);
-    localStorage.setItem('napi_saved_items', JSON.stringify(newItems));
+    saveItems(newItems);
   };
 
   const handleDelete = (id: string) => {
     if (confirm("Delete this saved item?")) {
       const newItems = savedItems.filter(i => i.id !== id);
       setSavedItems(newItems);
-      localStorage.setItem('napi_saved_items', JSON.stringify(newItems));
+      saveItems(newItems);
     }
+  };
+
+  const handleVisualize = (sqFt: number) => {
+    setVisualizeArea(sqFt);
+    setActiveTab('VISUALIZE');
   };
 
   return (
@@ -69,42 +72,45 @@ const App: React.FC = () => {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
-          {activeTab === 'CONVERT' && <ConvertScreen onSave={handleSave} />}
+          {activeTab === 'CONVERT' && <ConvertScreen onSave={handleSave} onVisualize={handleVisualize} />}
           {activeTab === 'MEASURE' && <MeasureScreen onSave={handleSave} />}
           {activeTab === 'SAVED' && <SavedScreen items={savedItems} onDelete={handleDelete} />}
+          {activeTab === 'VISUALIZE' && <VisualizeScreen initialArea={visualizeArea} onBack={() => setActiveTab('CONVERT')} />}
         </div>
       </main>
 
-      {/* Floating Dock (Mac Style) */}
-      <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 transition-all hover:scale-105 hover:bg-slate-900/80">
-        <DockItem
-          active={activeTab === 'CONVERT'}
-          onClick={() => setActiveTab('CONVERT')}
-          icon={<Calculator size={22} />}
-          label="Converter"
-        />
-        <div className="w-px h-8 bg-white/10 mx-1"></div>
-        <DockItem
-          active={activeTab === 'MEASURE'}
-          onClick={() => setActiveTab('MEASURE')}
-          icon={<MapIcon size={22} />}
-          label="Smart Measure"
-          isMain
-        />
-        <div className="w-px h-8 bg-white/10 mx-1"></div>
-        <DockItem
-          active={activeTab === 'SAVED'}
-          onClick={() => setActiveTab('SAVED')}
-          icon={<Bookmark size={22} />}
-          label="History"
-        />
-        <DockItem
-          active={false}
-          onClick={() => { }}
-          icon={<Settings size={22} />}
-          label="Settings"
-        />
-      </nav>
+      {/* Floating Dock (Mac Style) - Hide on Visualize screen? Optional, but keeping for now as standard nav */}
+      {activeTab !== 'VISUALIZE' && (
+        <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 transition-all hover:scale-105 hover:bg-slate-900/80">
+          <DockItem
+            active={activeTab === 'CONVERT'}
+            onClick={() => setActiveTab('CONVERT')}
+            icon={<Calculator size={22} />}
+            label="Converter"
+          />
+          <div className="w-px h-8 bg-white/10 mx-1"></div>
+          <DockItem
+            active={activeTab === 'MEASURE'}
+            onClick={() => setActiveTab('MEASURE')}
+            icon={<MapIcon size={22} />}
+            label="Smart Measure"
+            isMain
+          />
+          <div className="w-px h-8 bg-white/10 mx-1"></div>
+          <DockItem
+            active={activeTab === 'SAVED'}
+            onClick={() => setActiveTab('SAVED')}
+            icon={<Bookmark size={22} />}
+            label="History"
+          />
+          <DockItem
+            active={false}
+            onClick={() => { }}
+            icon={<Settings size={22} />}
+            label="Settings"
+          />
+        </nav>
+      )}
 
     </div>
   );
