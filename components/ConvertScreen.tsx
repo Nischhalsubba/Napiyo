@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, ChevronDown, Repeat, Copy, Eye } from 'lucide-react';
+import { Save, ChevronDown, Repeat, Copy, Eye, X, LayoutGrid } from 'lucide-react';
 import { UNITS } from '../constants';
 import { toSqFt, formatDecimal, getHillsBreakdown, getTeraiBreakdown } from '../utils/conversions';
 import { SavedItem, UnitSystem } from '../types';
@@ -12,6 +12,7 @@ interface ConvertScreenProps {
 const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) => {
   const [val, setVal] = useState<string>('1');
   const [unit, setUnit] = useState<string>('ROPANI');
+  const [showAllUnits, setShowAllUnits] = useState(false);
 
   // Derived
   const numVal = parseFloat(val) || 0;
@@ -63,7 +64,10 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
         </div>
 
         {/* Simple Actions */}
-        <div className="flex gap-6 mt-4 mb-6">
+        <div className="flex gap-4 mt-4 mb-6">
+          <button onClick={() => setShowAllUnits(true)} className="text-slate-300 hover:text-white flex items-center gap-2 font-bold text-sm bg-slate-800 px-4 py-2 rounded-full transition-colors border border-white/20 hover:border-brand-500">
+            <LayoutGrid size={16} /> View All Units
+          </button>
           <button onClick={() => onVisualize(sqFt)} className="text-brand-400 hover:text-white flex items-center gap-2 font-bold text-sm bg-slate-800 px-4 py-2 rounded-full transition-colors border border-white/20 hover:border-brand-500">
             <Eye size={16} /> Visualize Size
           </button>
@@ -98,6 +102,52 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
           </button>
         </div>
       </div>
+
+      {/* --- ALL UNITS MODAL --- */}
+      {showAllUnits && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-white/20 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowAllUnits(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <LayoutGrid size={20} className="text-brand-500" />
+              All Popular Units
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Meters</div>
+                <div className="text-2xl font-mono text-white font-bold">{fmt(sqM)}</div>
+                <div className="text-xs text-slate-500">sq.m</div>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Yards</div>
+                <div className="text-2xl font-mono text-white font-bold">{fmt(sqFt / 9)}</div>
+                <div className="text-xs text-slate-500">sq.yd</div>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Hectares</div>
+                <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 107639, 4)}</div>
+                <div className="text-xs text-slate-500">ha</div>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Acres</div>
+                <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 43560, 4)}</div>
+                <div className="text-xs text-slate-500">ac</div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/10 text-center">
+              <p className="text-slate-500 text-xs">Based on standard conversion rates.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
