@@ -1,0 +1,5 @@
+{
+  "name": "Napi",
+  "description": "A Nepal-first land area utility to convert, visualize, and measure plot areas using Hills and Terai unit systems.",
+  "requestFramePermissions": []
+}
