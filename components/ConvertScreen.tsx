@@ -1,240 +1,179 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeftRight, Copy, Save, Info, ChevronDown, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeftRight, Save, History, ChevronDown, Check } from 'lucide-react';
 import { UNITS, QUICK_CHIPS } from '../constants';
-import { toSqFt, getHillsBreakdown, getTeraiBreakdown, formatDecimal, fromSqFt } from '../utils/conversions';
-import { SavedItem, UnitSystem } from '../types';
-import VisualizeModal from './VisualizeModal';
+import { toSqFt, fromSqFt, formatDecimal, getHillsBreakdown, getTeraiBreakdown } from '../utils/conversions';
+import { SavedItem } from '../types';
 
 interface ConvertScreenProps {
   onSave: (item: SavedItem) => void;
 }
 
 const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave }) => {
-  const [inputValue, setInputValue] = useState<string>('1');
-  const [selectedUnit, setSelectedUnit] = useState<string>('ROPANI');
-  const [systemFilter, setSystemFilter] = useState<UnitSystem>(UnitSystem.HILLS);
-  const [showVisualize, setShowVisualize] = useState(false);
-  const [showRef, setShowRef] = useState(false);
+  const [val, setVal] = useState<string>('1');
+  const [fromUnit, setFromUnit] = useState<string>('ROPANI');
+  const [toUnit, setToUnit] = useState<string>('SQFT');
 
-  // Computed Values
-  const numericVal = parseFloat(inputValue) || 0;
-  const sqFtVal = toSqFt(numericVal, selectedUnit);
-  const sqMVal = sqFtVal / 10.7639;
-  
-  const hills = getHillsBreakdown(sqFtVal);
-  const terai = getTeraiBreakdown(sqFtVal);
+  const numVal = parseFloat(val) || 0;
+  const sqFt = toSqFt(numVal, fromUnit);
+  const result = fromSqFt(sqFt, toUnit);
 
-  const formattedHills = `${hills.ropani} Ropani, ${hills.aana} Aana, ${hills.paisa} Paisa, ${formatDecimal(hills.daam, 2)} Daam`;
-  const formattedTerai = `${terai.bigha} Bigha, ${terai.kattha} Kattha, ${formatDecimal(terai.dhur, 2)} Dhur`;
+  const hills = getHillsBreakdown(sqFt);
+  const terai = getTeraiBreakdown(sqFt);
 
-  const handleChipClick = (val: number, unit: string) => {
-    setInputValue(val.toString());
-    setSelectedUnit(unit);
-    const u = UNITS[unit];
-    if (u && u.system !== UnitSystem.MODERN) setSystemFilter(u.system);
-  };
-
-  const saveConversion = () => {
+  const handleSave = () => {
     onSave({
       id: Date.now().toString(),
-      name: `${inputValue} ${UNITS[selectedUnit].name}`,
-      sqFt: sqFtVal,
+      name: `${val} ${UNITS[fromUnit].name} to ${UNITS[toUnit].name}`,
+      sqFt: sqFt,
       date: Date.now(),
       type: 'CONVERTED',
-      tags: [UNITS[selectedUnit].system]
+      tags: ['Conversion']
     });
-    // Add toast logic here
-  };
-
-  const copyResults = () => {
-    const text = `Converted: ${inputValue} ${UNITS[selectedUnit].name}\n= ${formatDecimal(sqFtVal)} sq.ft\n= ${formattedHills}\n= ${formattedTerai}`;
-    navigator.clipboard.writeText(text);
+    alert("Saved!");
   };
 
   return (
-    <div className="flex flex-col h-full bg-surface-50 overflow-y-auto pb-24 md:pb-0">
-      
-      {/* 1. System Switch */}
-      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 py-3 shadow-sm border-b border-surface-200">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar p-1">
-          {[UnitSystem.HILLS, UnitSystem.TERAI, UnitSystem.MODERN].map((sys) => (
-            <button
-              key={sys}
-              onClick={() => setSystemFilter(sys)}
-              className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 ${
-                systemFilter === sys 
-                ? 'bg-primary-600 text-white shadow-lg shadow-primary-200 scale-105' 
-                : 'bg-white text-slate-500 hover:bg-surface-100 border border-transparent hover:border-surface-200'
-              }`}
-            >
-              {sys === UnitSystem.HILLS ? 'Hills' : sys === UnitSystem.TERAI ? 'Terai' : 'Modern'}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="h-full flex flex-col md:flex-row gap-6 p-6 md:p-10 animate-enter overflow-y-auto">
 
-      <div className="p-4 md:p-8 space-y-8 max-w-2xl mx-auto w-full animate-enter">
-        
-        {/* 2. Hero Input Card */}
-        <div className="bg-white p-1 rounded-[2rem] shadow-soft">
-           <div className="bg-gradient-to-br from-white to-surface-50 rounded-[1.8rem] border border-surface-100 p-6 md:p-8">
-              <label className="block text-xs font-extrabold text-primary-600 uppercase tracking-widest mb-4">Input Value</label>
-              
-              <div className="flex flex-col md:flex-row gap-4 items-stretch">
-                <input 
-                  type="number" 
-                  inputMode="decimal"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  className="flex-1 text-5xl md:text-6xl font-black text-slate-800 bg-transparent border-b-2 border-surface-200 focus:border-primary-500 focus:outline-none py-2 placeholder-slate-200 tabular-nums tracking-tight transition-colors"
-                  placeholder="0"
-                />
-                
-                <div className="relative min-w-[160px]">
-                  <select 
-                    value={selectedUnit}
-                    onChange={(e) => setSelectedUnit(e.target.value)}
-                    className="w-full h-full appearance-none bg-primary-50 border border-primary-100 text-primary-900 py-4 px-6 pr-12 rounded-2xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all cursor-pointer hover:bg-primary-100"
-                  >
-                      {Object.values(UNITS)
-                        .filter(u => u.system === systemFilter || u.system === UnitSystem.MODERN)
-                        .map(u => (
-                          <option key={u.id} value={u.id}>{u.name}</option>
-                      ))}
-                  </select>
-                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-primary-400 pointer-events-none" size={20} strokeWidth={3} />
+      {/* Left Panel: Input */}
+      <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full">
+
+        <div className="bg-white p-8 rounded-[2rem] shadow-soft border border-slate-100 relative overflow-hidden">
+          {/* Decorator */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-bl-[4rem] -z-0"></div>
+
+          <div className="relative z-10">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 block">Input Value</label>
+
+            <div className="flex items-center gap-4 mb-6">
+              <input
+                type="number"
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                className="flex-1 text-5xl md:text-6xl font-black bg-transparent border-none focus:outline-none focus:ring-0 text-slate-800 placeholder-slate-200 tracking-tight"
+                placeholder="0"
+              />
+              <div className="relative group">
+                <select
+                  value={fromUnit}
+                  onChange={e => setFromUnit(e.target.value)}
+                  className="appearance-none bg-slate-50 hover:bg-slate-100 transition-colors text-slate-800 font-bold text-lg py-3 pl-6 pr-12 rounded-2xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                >
+                  {Object.values(UNITS).map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+              </div>
+            </div>
+
+            {/* Quick Chips */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              {QUICK_CHIPS.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => { setVal(chip.val.toString()); setFromUnit(chip.unit); }}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold bg-slate-50 text-slate-500 hover:bg-primary-50 hover:text-primary-600 transition-colors border border-transparent hover:border-primary-100"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-full h-px bg-slate-100 mb-8"></div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="fw-bold text-sm text-slate-400 mb-1">Equals to</div>
+                <div className="text-3xl font-extrabold text-primary-600 flex items-baseline gap-2">
+                  {formatDecimal(result)}
+                  <span className="text-base font-bold text-slate-400">{UNITS[toUnit].name}</span>
                 </div>
               </div>
 
-              {/* Quick Chips Inside */}
-              <div className="mt-6 flex flex-wrap gap-2">
-                {QUICK_CHIPS.map((chip, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => handleChipClick(chip.val, chip.unit)}
-                    className="px-3 py-1.5 bg-white border border-surface-200 rounded-lg text-xs font-bold text-slate-500 hover:border-primary-400 hover:text-primary-700 hover:shadow-sm transition-all active:scale-95"
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
-           </div>
-        </div>
-
-        {/* 4. Results Block */}
-        <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-surface-100">
-          <div className="relative bg-slate-900 p-8 text-white overflow-hidden">
-            {/* Abstract Background Decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500 rounded-full blur-[80px] opacity-20 -translate-y-1/2 translate-x-1/3"></div>
-            
-            <div className="relative z-10 text-center">
-              <div className="text-primary-300 text-xs font-bold uppercase tracking-widest mb-2">Equivalent Area</div>
-              <div className="text-5xl font-black tracking-tight mb-3 flex items-baseline justify-center gap-2">
-                {formatDecimal(sqFtVal)} 
-                <span className="text-xl font-medium text-slate-400">sq.ft</span>
-              </div>
-              <div className="inline-block bg-white/10 backdrop-blur-sm rounded-full px-4 py-1 text-sm font-medium text-slate-200 border border-white/10">
-                {formatDecimal(sqMVal)} sq.m
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-6 md:p-8 space-y-6">
-            {/* Hills Breakdown */}
-            <div className={`transition-all duration-300 ${systemFilter === UnitSystem.HILLS ? 'opacity-100 scale-100' : 'opacity-60 grayscale'}`}>
-              <div className="flex justify-between items-center mb-3">
-                 <div className="text-xs font-extrabold text-primary-600 uppercase tracking-widest">Hills</div>
-                 {systemFilter === UnitSystem.HILLS && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse"></div>}
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                <ResultBox val={hills.ropani} label="Ropani" />
-                <ResultBox val={hills.aana} label="Aana" />
-                <ResultBox val={hills.paisa} label="Paisa" />
-                <ResultBox val={formatDecimal(hills.daam, 1)} label="Daam" isLast />
+              <div className="relative">
+                <select
+                  value={toUnit}
+                  onChange={e => setToUnit(e.target.value)}
+                  className="appearance-none bg-primary-50 hover:bg-primary-100 text-primary-700 font-bold py-2 pl-4 pr-10 rounded-xl cursor-pointer focus:outline-none"
+                >
+                  {Object.values(UNITS).map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-400 pointer-events-none" size={16} />
               </div>
             </div>
 
-            <div className="h-px bg-surface-100 w-full"></div>
-
-            {/* Terai Breakdown */}
-            <div className={`transition-all duration-300 ${systemFilter === UnitSystem.TERAI ? 'opacity-100 scale-100' : 'opacity-60 grayscale'}`}>
-              <div className="flex justify-between items-center mb-3">
-                 <div className="text-xs font-extrabold text-primary-600 uppercase tracking-widest">Terai</div>
-                 {systemFilter === UnitSystem.TERAI && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse"></div>}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <ResultBox val={terai.bigha} label="Bigha" />
-                <ResultBox val={terai.kattha} label="Kattha" />
-                <ResultBox val={formatDecimal(terai.dhur, 2)} label="Dhur" isLast />
-              </div>
-            </div>
-          </div>
-
-          {/* Action Row */}
-          <div className="grid grid-cols-3 border-t border-surface-100">
-             <button onClick={() => setShowVisualize(true)} className="py-5 text-sm font-bold text-primary-700 hover:bg-primary-50 transition-colors flex flex-col items-center gap-2 group">
-               <Info size={20} className="group-hover:scale-110 transition-transform" /> Visualize
-             </button>
-             <button onClick={copyResults} className="py-5 text-sm font-bold text-slate-600 hover:bg-surface-50 transition-colors flex flex-col items-center gap-2 group border-l border-surface-100">
-               <Copy size={20} className="group-hover:scale-110 transition-transform" /> Copy
-             </button>
-             <button onClick={saveConversion} className="py-5 text-sm font-bold text-slate-600 hover:bg-surface-50 transition-colors flex flex-col items-center gap-2 group border-l border-surface-100">
-               <Save size={20} className="group-hover:scale-110 transition-transform" /> Save
-             </button>
           </div>
         </div>
 
-        {/* 5. Reference Accordion */}
-        <div className="border border-surface-200 rounded-2xl bg-white overflow-hidden">
-          <button 
-             onClick={() => setShowRef(!showRef)}
-             className="w-full flex justify-between items-center p-5 bg-white text-sm font-bold text-slate-600 hover:bg-surface-50 transition-colors"
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-slate-600 shadow-sm border border-slate-100 hover:shadow-md hover:text-slate-900 transition-all text-sm font-bold"
           >
-             <span>Unit Reference Table</span>
-             <ChevronDown className={`transform transition-transform text-slate-400 ${showRef ? 'rotate-180' : ''}`} size={20} />
+            <Save size={18} /> Save Calculation
           </button>
-          {showRef && (
-            <div className="p-6 pt-0 text-sm space-y-6 bg-surface-50/50">
-               <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h4 className="font-extrabold text-slate-800 mb-3 border-b pb-2">Hills System</h4>
-                    <ul className="space-y-2 text-slate-600 font-medium">
-                      <li className="flex justify-between"><span>1 Ropani</span> <span className="text-slate-400">16 Aana</span></li>
-                      <li className="flex justify-between"><span>1 Aana</span> <span className="text-slate-400">4 Paisa</span></li>
-                      <li className="flex justify-between"><span>1 Paisa</span> <span className="text-slate-400">4 Daam</span></li>
-                      <li className="flex justify-between pt-2 border-t text-primary-700 font-bold"><span>1 Ropani</span> <span>5,476 sq.ft</span></li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-slate-800 mb-3 border-b pb-2">Terai System</h4>
-                    <ul className="space-y-2 text-slate-600 font-medium">
-                      <li className="flex justify-between"><span>1 Bigha</span> <span className="text-slate-400">20 Kattha</span></li>
-                      <li className="flex justify-between"><span>1 Kattha</span> <span className="text-slate-400">20 Dhur</span></li>
-                      <li className="flex justify-between pt-2 border-t text-primary-700 font-bold"><span>1 Bigha</span> <span>72,900 sq.ft</span></li>
-                    </ul>
-                  </div>
-               </div>
-            </div>
-          )}
         </div>
 
       </div>
 
-      <VisualizeModal 
-        isOpen={showVisualize} 
-        onClose={() => setShowVisualize(false)} 
-        sqFt={sqFtVal}
-        formattedHills={formattedHills}
-        formattedTerai={formattedTerai}
-      />
+      {/* Right Panel: Breakdown */}
+      <div className="flex-1 max-w-sm w-full mx-auto md:mx-0">
+        <h3 className="text-sm font-bold text-slate-400 uppercase mb-4 tracking-wider">Detailed Breakdown</h3>
+
+        <div className="space-y-4">
+          {/* Hills Card */}
+          <div className="bg-white/60 p-5 rounded-3xl border border-white shadow-sm backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center font-bold text-xs">H</div>
+              <span className="font-bold text-slate-700">Hill System</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <UnitBox val={hills.ropani} label="Ropani" />
+              <UnitBox val={hills.aana} label="Aana" />
+              <UnitBox val={hills.paisa} label="Paisa" />
+              <UnitBox val={hills.daam} label="Daam" isDec />
+            </div>
+          </div>
+
+          {/* Terai Card */}
+          <div className="bg-white/60 p-5 rounded-3xl border border-white shadow-sm backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center font-bold text-xs">T</div>
+              <span className="font-bold text-slate-700">Terai System</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <UnitBox val={terai.bigha} label="Bigha" />
+              <UnitBox val={terai.kattha} label="Kattha" />
+              <UnitBox val={terai.dhur} label="Dhur" isDec />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 bg-slate-900 rounded-3xl p-6 text-slate-300 text-xs relative overflow-hidden group hover:shadow-xl transition-all cursor-crosshair">
+          <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ArrowLeftRight size={64} />
+          </div>
+          <div className="font-bold text-white text-base mb-1">Did you know?</div>
+          <p className="leading-relaxed">
+            1 Ropani is exactly 5,476 sq. ft., which is roughly one-eighth of an acre. In the Terai, the Bigha system is used, where 1 Bigha equals 13 Ropanis.
+          </p>
+        </div>
+
+      </div>
+
     </div>
   );
 };
 
-const ResultBox = ({ val, label, isLast }: { val: number | string, label: string, isLast?: boolean }) => (
-  <div className="bg-surface-50 rounded-xl p-3 flex flex-col items-center justify-center border border-surface-100">
-    <span className={`font-black text-slate-800 tabular-nums ${String(val).length > 4 ? 'text-lg' : 'text-xl'}`}>{val}</span>
-    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+const UnitBox = ({ val, label, isDec = false }: { val: number, label: string, isDec?: boolean }) => (
+  <div className="bg-white rounded-xl p-2 shadow-sm border border-slate-50 flex flex-col items-center justify-center min-h-[70px]">
+    <div className="font-black text-slate-800 text-lg leading-none mb-1">
+      {isDec ? formatDecimal(val, 2) : val}
+    </div>
+    <div className="text-[10px] uppercase font-bold text-slate-400">{label}</div>
   </div>
 );
 
