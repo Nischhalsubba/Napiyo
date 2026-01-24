@@ -56,25 +56,14 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
       </div>
 
       {/* --- ANSWER SECTION (Bottom Half) --- */}
+      {/* --- ANSWER SECTION (Bottom Half) --- */}
       <div className="flex-1 flex flex-col justify-start items-center pt-6 border-t border-white/20">
-        <div className="text-slate-300 font-bold text-sm uppercase tracking-widest mb-2">That is equal to</div>
+        <div className="text-slate-300 font-bold text-sm uppercase tracking-widest mb-4">That is equal to</div>
 
-        <div className="text-6xl font-display font-black text-brand-500 mb-2 tracking-tight">
-          {fmt(sqFt)} <span className="text-2xl text-slate-400 font-bold">sq.ft</span>
-        </div>
+        {/* 3-Card Result Grid */}
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-3 animate-enter mb-6">
 
-        {/* Simple Actions */}
-        <div className="flex gap-4 mt-4 mb-6">
-          <button onClick={() => setShowAllUnits(true)} className="text-slate-300 hover:text-white flex items-center gap-2 font-bold text-sm bg-slate-800 px-4 py-2 rounded-full transition-colors border border-white/20 hover:border-brand-500">
-            <LayoutGrid size={16} /> View All Units
-          </button>
-          <button onClick={() => onVisualize(sqFt)} className="text-brand-400 hover:text-white flex items-center gap-2 font-bold text-sm bg-slate-800 px-4 py-2 rounded-full transition-colors border border-white/20 hover:border-brand-500">
-            <Eye size={16} /> Visualize Size
-          </button>
-        </div>
-
-        {/* Dual Unit View (Permanent) */}
-        <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-3 animate-enter pb-4">
+          {/* Card 1: Hill System (Local) */}
           <div className="bg-slate-800 border border-white/20 p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
             <div className="text-[10px] uppercase font-bold text-slate-300 tracking-widest mb-1">Hill System</div>
             <div className="text-xl font-mono font-bold text-white relative z-10">
@@ -83,6 +72,7 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
             <div className="text-[10px] text-slate-400 font-mono mt-1">Ropani-Aana-Paisa-Daam</div>
           </div>
 
+          {/* Card 2: Terai System (Local) */}
           <div className="bg-slate-800 border border-white/20 p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
             <div className="text-[10px] uppercase font-bold text-slate-300 tracking-widest mb-1">Terai System</div>
             <div className="text-xl font-mono font-bold text-white relative z-10">
@@ -91,64 +81,87 @@ const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) =>
             <div className="text-[10px] text-slate-400 font-mono mt-1">Bigha-Kattha-Dhur</div>
           </div>
 
+          {/* Card 3: Global System (Global) */}
+          <div className="bg-slate-800 border border-white/20 p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
+            <div className="text-[10px] uppercase font-bold text-slate-300 tracking-widest mb-1">Global Units</div>
+            <div className="text-xl font-bold text-brand-400 relative z-10">
+              {fmt(sqFt)} <span className="text-xs text-slate-400 font-normal">sq.ft</span>
+            </div>
+            <div className="text-[10px] text-slate-400 font-mono mt-1">
+              {fmt(sqM)} sq.m
+            </div>
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        <div className="w-full max-w-4xl flex items-center justify-between gap-4">
+          <div className="flex gap-2">
+            <button onClick={() => setShowAllUnits(true)} className="text-slate-300 hover:text-white flex items-center gap-2 font-bold text-xs bg-slate-800 px-3 py-2 rounded-lg transition-colors border border-white/20 hover:border-brand-500">
+              <LayoutGrid size={14} /> View All
+            </button>
+            <button onClick={() => onVisualize(sqFt)} className="text-brand-400 hover:text-white flex items-center gap-2 font-bold text-xs bg-slate-800 px-3 py-2 rounded-lg transition-colors border border-white/20 hover:border-brand-500">
+              <Eye size={14} /> Visualize
+            </button>
+          </div>
+
           <button
             onClick={() => {
               onSave({ id: Date.now().toString(), title: `${val} ${UNITS[unit].name}`, sqFt, date: Date.now(), type: 'CONVERTED', tags: [] });
               alert("Saved");
             }}
-            className="col-span-1 md:col-span-2 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg uppercase tracking-wide text-xs"
+            className="bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg px-4 py-2 transition-colors flex items-center gap-2 shadow-lg uppercase tracking-wide text-xs"
           >
-            <Save size={16} /> Save to History
+            <Save size={14} /> Save
           </button>
         </div>
-      </div>
 
-      {/* --- ALL UNITS MODAL --- */}
-      {showAllUnits && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-white/20 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
-            <button
-              onClick={() => setShowAllUnits(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-            >
-              <X size={24} />
-            </button>
+        {/* --- ALL UNITS MODAL --- */}
+        {showAllUnits && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+            <div className="bg-slate-900 border border-white/20 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+              <button
+                onClick={() => setShowAllUnits(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
 
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <LayoutGrid size={20} className="text-brand-500" />
-              All Popular Units
-            </h3>
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <LayoutGrid size={20} className="text-brand-500" />
+                All Popular Units
+              </h3>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Meters</div>
-                <div className="text-2xl font-mono text-white font-bold">{fmt(sqM)}</div>
-                <div className="text-xs text-slate-500">sq.m</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Meters</div>
+                  <div className="text-2xl font-mono text-white font-bold">{fmt(sqM)}</div>
+                  <div className="text-xs text-slate-500">sq.m</div>
+                </div>
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Yards</div>
+                  <div className="text-2xl font-mono text-white font-bold">{fmt(sqFt / 9)}</div>
+                  <div className="text-xs text-slate-500">sq.yd</div>
+                </div>
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Hectares</div>
+                  <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 107639, 4)}</div>
+                  <div className="text-xs text-slate-500">ha</div>
+                </div>
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
+                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Acres</div>
+                  <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 43560, 4)}</div>
+                  <div className="text-xs text-slate-500">ac</div>
+                </div>
               </div>
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Yards</div>
-                <div className="text-2xl font-mono text-white font-bold">{fmt(sqFt / 9)}</div>
-                <div className="text-xs text-slate-500">sq.yd</div>
-              </div>
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Hectares</div>
-                <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 107639, 4)}</div>
-                <div className="text-xs text-slate-500">ha</div>
-              </div>
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                <div className="text-xs text-slate-400 font-bold uppercase mb-1">Acres</div>
-                <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 43560, 4)}</div>
-                <div className="text-xs text-slate-500">ac</div>
-              </div>
-            </div>
 
-            <div className="mt-6 pt-6 border-t border-white/10 text-center">
-              <p className="text-slate-500 text-xs">Based on standard conversion rates.</p>
+              <div className="mt-6 pt-6 border-t border-white/10 text-center">
+                <p className="text-slate-500 text-xs">Based on standard conversion rates.</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
+      </div>
     </div>
   );
 };
