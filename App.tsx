@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Zap, Bookmark, Map as MapIcon, Settings } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import ConvertScreen from './components/ConvertScreen';
 import MeasureScreen from './components/MeasureScreen';
 import SavedScreen from './components/SavedScreen';
@@ -102,6 +103,7 @@ const App: React.FC = () => {
         </nav>
       )}
 
+      <Analytics />
     </div>
   );
 };
