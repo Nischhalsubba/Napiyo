@@ -1,0 +1,48 @@
+# Napiyo
+
+Napiyo is a Nepal-focused land measurement utility for converting traditional Hill and Terai land units, comparing global units, visualizing area, tracing plot images approximately, and saving calculations locally.
+
+## Supported Nepal land units
+
+- Ropani
+- Aana
+- Paisa
+- Daam
+- Bigha
+- Kattha
+- Dhur
+
+## Global units
+
+- Square feet
+- Square meters
+- Square yards
+- Acres
+- Hectares
+
+## Main features
+
+- Instant conversion between Nepal and global land units
+- Hill-system breakdown as Ropani-Aana-Paisa-Daam
+- Terai-system breakdown as Bigha-Kattha-Dhur
+- Approximate map or image calibration
+- Polygon tracing for approximate area calculation
+- Area visualization
+- Local saved calculation history
+
+## Technical summary
+
+- React 18
+- TypeScript
+- Vite 5
+- Browser local storage
+- Lucide React icons
+- Optional Microlink screenshot extraction
+
+## Repository
+
+https://github.com/Nischhalsubba/Napiyo
+
+## Accuracy disclaimer
+
+Napiyo is an estimation and learning tool. It does not replace certified survey measurements, cadastral maps, land ownership documents, government records, legal advice, or a licensed surveyor. Manual image calibration, polygon tracing, screenshots, and conversion inputs can introduce significant error.
