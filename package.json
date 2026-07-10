@@ -1,8 +1,11 @@
 {
-  "name": "napi",
+  "name": "napiyo-nepal-land-tools",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "description": "A Nepal-focused land unit converter, plot visualization tool, saved calculation utility, and approximate map tracing prototype.",
+  "author": "Nischhal Raj Subba",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
