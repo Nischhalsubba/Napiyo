@@ -1,29 +1,30 @@
 export enum UnitSystem {
   HILLS = 'HILLS',
   TERAI = 'TERAI',
-  MODERN = 'MODERN'
+  GLOBAL = 'GLOBAL',
 }
 
 export interface UnitDefinition {
   id: string;
   name: string;
-  sqFtFactor: number; // How many sq ft is 1 unit
+  shortName: string;
+  sqFtFactor: number;
   system: UnitSystem;
+  description: string;
 }
 
 export interface SavedItem {
   id: string;
   title: string;
   sqFt: number;
-  sqM?: number; // Optional, computed
+  sqM: number;
   date: number;
   type: 'CONVERTED' | 'MEASURED';
-  tags: string[]; // Keep tags for filtering if needed, or map to 'source'
+  tags: string[];
   source?: {
-    systemMode?: string;
-    roundingMode?: boolean;
     inputValue?: string;
     inputUnit?: string;
+    referenceDistanceFt?: number;
   };
 }
 
@@ -32,4 +33,5 @@ export interface Point {
   y: number;
 }
 
-export type ViewState = 'CONVERT' | 'MEASURE' | 'SAVED' | 'VISUALIZE';
+export type ViewState = 'convert' | 'measure' | 'saved' | 'visualize';
+export type SavedFilter = 'ALL' | SavedItem['type'];

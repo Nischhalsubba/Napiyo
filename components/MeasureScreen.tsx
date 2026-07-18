@@ -1,391 +1,244 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Save, RotateCcw, ChevronRight, Sparkles, Globe, MousePointer2, X, Check } from 'lucide-react';
-import { calculatePolygonAreaPx, distance, formatDecimal, getHillsBreakdown } from '../utils/conversions';
-import { SavedItem } from '../types';
+import { ChangeEvent, PointerEvent, useRef, useState } from 'react';
+import { Check, ImagePlus, Link2, MapPinned, RotateCcw, Save, Trash2, Undo2, Upload } from 'lucide-react';
+import { Point, SavedItem } from '../types';
+import { calculatePolygonAreaPx, distance, formatDecimal, formatHills, formatTerai, toSqM } from '../utils/conversions';
 
-enum MeasureStep {
-  EXTRACT = 0,
-  CALIBRATE = 1,
-  TRACE = 2,
-  REPORT = 3
+type Step = 'SOURCE' | 'CALIBRATE' | 'TRACE' | 'RESULT';
+
+interface Props {
+  onSave: (item: SavedItem) => boolean;
+  notify: (message: string) => void;
 }
 
-interface MeasureScreenProps {
-  onSave: (item: SavedItem) => void;
-}
+const STEPS: { id: Step; label: string }[] = [
+  { id: 'SOURCE', label: 'Image' },
+  { id: 'CALIBRATE', label: 'Scale' },
+  { id: 'TRACE', label: 'Boundary' },
+  { id: 'RESULT', label: 'Estimate' },
+];
 
-const MeasureScreen: React.FC<MeasureScreenProps> = ({ onSave }) => {
-  const [step, setStep] = useState<MeasureStep>(MeasureStep.EXTRACT);
+const MeasureScreen = ({ onSave, notify }: Props) => {
+  const [step, setStep] = useState<Step>('SOURCE');
   const [image, setImage] = useState<string | null>(null);
-  const [imgDims, setImgDims] = useState({ w: 0, h: 0 });
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  // URL Extraction
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [url, setUrl] = useState('');
-  const [isExtracting, setIsExtracting] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [scalePoints, setScalePoints] = useState<Point[]>([]);
+  const [referenceFeet, setReferenceFeet] = useState('50');
+  const [pixelsPerFoot, setPixelsPerFoot] = useState<number | null>(null);
+  const [boundary, setBoundary] = useState<Point[]>([]);
+  const [saved, setSaved] = useState(false);
+  const workspaceRef = useRef<HTMLDivElement>(null);
 
-  // Calibration (Step 1)
-  const [scalePoints, setScalePoints] = useState<{ x: number, y: number }[]>([]);
-  const [showDistInput, setShowDistInput] = useState(false);
-  const [realDist, setRealDist] = useState<string>('50');
-  const [pixelsPerFt, setPixelsPerFt] = useState<number | null>(null);
+  const areaSqFt = pixelsPerFoot ? calculatePolygonAreaPx(boundary) / pixelsPerFoot ** 2 : 0;
+  const areaSqM = toSqM(areaSqFt);
+  const currentIndex = STEPS.findIndex((item) => item.id === step);
 
-  // Tracing (Step 2)
-  const [polyPoints, setPolyPoints] = useState<{ x: number, y: number }[]>([]);
-  const [isClosed, setIsClosed] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // --- Logic ---
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        const img = new Image();
-        img.onload = () => {
-          setImgDims({ w: img.width, h: img.height });
-          setImage(result);
-          setStep(MeasureStep.CALIBRATE);
-        };
-        img.src = result;
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const usePlaceholder = () => {
-    const MOCK_MAP = "https://placehold.co/1200x800/1e293b/FFFFFF/png?text=Satellite+Map+Preview";
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.onload = () => {
-      setImgDims({ w: img.width, h: img.height });
-      setImage(MOCK_MAP);
-      setIsExtracting(false);
-      setStep(MeasureStep.CALIBRATE);
+  const openImage = (source: string) => {
+    const next = new Image();
+    next.onload = () => {
+      setDimensions({ width: next.naturalWidth, height: next.naturalHeight });
+      setImage(source);
+      setScalePoints([]);
+      setBoundary([]);
+      setPixelsPerFoot(null);
+      setSaved(false);
+      setError('');
+      setBusy(false);
+      setStep('CALIBRATE');
     };
-    img.src = MOCK_MAP;
+    next.onerror = () => {
+      setBusy(false);
+      setError('That image could not be loaded. Upload a screenshot instead.');
+    };
+    next.src = source;
   };
 
-  const handleExtractUrl = async () => {
-    if (!url) return;
-    setIsExtracting(true);
+  const upload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return setError('Choose a PNG, JPG, WebP, or another image file.');
+    if (file.size > 15 * 1024 * 1024) return setError('Use an image smaller than 15 MB.');
+    const reader = new FileReader();
+    reader.onload = () => openImage(String(reader.result));
+    reader.onerror = () => setError('The browser could not read that file.');
+    reader.readAsDataURL(file);
+  };
 
+  const importUrl = async () => {
     try {
-      // Use Microlink API for real screenshot
-      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`);
-      const data = await response.json();
-      const screenshotUrl = data?.screenshot?.url;
-
-      if (screenshotUrl) {
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.onload = () => {
-          setImgDims({ w: img.width, h: img.height });
-          setImage(screenshotUrl);
-          setIsExtracting(false);
-          setStep(MeasureStep.CALIBRATE);
-        };
-        img.onerror = () => {
-          console.warn("Screenshot failed to load image data");
-          usePlaceholder();
-        };
-        img.src = screenshotUrl;
-      } else {
-        throw new Error("No screenshot generated");
-      }
-    } catch (e) {
-      console.error("Extraction error:", e);
-      usePlaceholder();
+      const parsed = new URL(url.trim());
+      setBusy(true);
+      setError('');
+      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(parsed.href)}&screenshot=true&meta=false&embed=screenshot.url`);
+      if (!response.ok) throw new Error('Screenshot request failed');
+      const screenshotUrl = (await response.text()).replace(/^"|"$/g, '');
+      if (!screenshotUrl.startsWith('http')) throw new Error('Screenshot missing');
+      openImage(screenshotUrl);
+    } catch (reason) {
+      console.error('Map import failed.', reason);
+      setBusy(false);
+      setError('URL import is unavailable for this page. Upload a screenshot for the most reliable result.');
     }
   };
 
-  // Safe Click Handler
-  const getRelativeCoords = (e: React.MouseEvent) => {
-    if (!containerRef.current) return { x: 0, y: 0 };
-    const rect = containerRef.current.getBoundingClientRect();
-
-    // Safety check for 0 dimensions
-    if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
-
-    const containerAspect = rect.width / rect.height;
-    const imageAspect = (imgDims.w / imgDims.h) || 1; // avoid divide by zero
-
-    let renderW, renderH, offsetX, offsetY;
-
-    if (containerAspect > imageAspect) {
-      renderH = rect.height;
-      renderW = renderH * imageAspect;
-      offsetX = (rect.width - renderW) / 2;
-      offsetY = 0;
-    } else {
-      renderW = rect.width;
-      renderH = renderW / imageAspect;
-      offsetX = 0;
-      offsetY = (rect.height - renderH) / 2;
-    }
-
-    const clickX = e.clientX - rect.left - offsetX;
-    const clickY = e.clientY - rect.top - offsetY;
-
-    return {
-      x: (clickX / renderW) * imgDims.w,
-      y: (clickY / renderH) * imgDims.h
-    };
+  const imagePoint = (event: PointerEvent<HTMLDivElement>): Point | null => {
+    const node = workspaceRef.current;
+    if (!node || !dimensions.width || !dimensions.height) return null;
+    const rect = node.getBoundingClientRect();
+    const imageAspect = dimensions.width / dimensions.height;
+    const boxAspect = rect.width / rect.height;
+    const width = boxAspect > imageAspect ? rect.height * imageAspect : rect.width;
+    const height = boxAspect > imageAspect ? rect.height : rect.width / imageAspect;
+    const offsetX = (rect.width - width) / 2;
+    const offsetY = (rect.height - height) / 2;
+    const x = event.clientX - rect.left - offsetX;
+    const y = event.clientY - rect.top - offsetY;
+    if (x < 0 || y < 0 || x > width || y > height) return null;
+    return { x: (x / width) * dimensions.width, y: (y / height) * dimensions.height };
   };
 
-  const handleCanvasClick = (e: React.MouseEvent) => {
-    const p = getRelativeCoords(e);
-
-    if (step === MeasureStep.CALIBRATE && !showDistInput) {
-      if (scalePoints.length < 2) {
-        const newPoints = [...scalePoints, p];
-        setScalePoints(newPoints);
-        if (newPoints.length === 2) setShowDistInput(true);
-      }
-    } else if (step === MeasureStep.TRACE) {
-      if (isClosed) return;
-      if (polyPoints.length > 2) {
-        const d = distance(p, polyPoints[0]);
-        if (d < (Math.max(imgDims.w, imgDims.h) * 0.02)) {
-          closePolygon([...polyPoints, p]);
-          return;
-        }
-      }
-      setPolyPoints([...polyPoints, p]);
-    }
+  const addPoint = (event: PointerEvent<HTMLDivElement>) => {
+    const point = imagePoint(event);
+    if (!point) return;
+    if (step === 'CALIBRATE' && scalePoints.length < 2) setScalePoints((items) => [...items, point]);
+    if (step === 'TRACE') setBoundary((items) => [...items, point]);
   };
 
-  const autoDetectScale = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      const y = imgDims.h * 0.85;
-      const x1 = imgDims.w * 0.2;
-      const x2 = imgDims.w * 0.8;
-      setScalePoints([{ x: x1, y }, { x: x2, y }]);
-      setIsScanning(false);
-      setShowDistInput(true);
-    }, 1000);
+  const confirmScale = () => {
+    const feet = Number(referenceFeet);
+    if (scalePoints.length !== 2) return notify('Select two points on a known distance.');
+    if (!Number.isFinite(feet) || feet <= 0) return notify('Enter a reference distance greater than zero.');
+    setPixelsPerFoot(distance(scalePoints[0], scalePoints[1]) / feet);
+    setBoundary([]);
+    setStep('TRACE');
   };
 
-  const confirmCalibration = () => {
-    const distPx = distance(scalePoints[0], scalePoints[1]);
-    setPixelsPerFt(distPx / parseFloat(realDist));
-    setShowDistInput(false);
-    setStep(MeasureStep.TRACE);
+  const save = () => {
+    if (!areaSqFt) return;
+    const ok = onSave({
+      id: crypto.randomUUID(),
+      title: `Measured plot - ${new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date())}`,
+      sqFt: areaSqFt,
+      sqM: areaSqM,
+      date: Date.now(),
+      type: 'MEASURED',
+      tags: ['estimated', 'image-trace'],
+      source: { referenceDistanceFt: Number(referenceFeet) },
+    });
+    setSaved(ok);
+    notify(ok ? 'Plot estimate saved on this device.' : 'This browser could not save the estimate.');
   };
 
-  const closePolygon = (finalPoints?: { x: number, y: number }[]) => {
-    setIsClosed(true);
-    if (finalPoints) setPolyPoints(finalPoints);
-    setStep(MeasureStep.REPORT);
+  const reset = () => {
+    setStep('SOURCE');
+    setImage(null);
+    setScalePoints([]);
+    setBoundary([]);
+    setPixelsPerFoot(null);
+    setSaved(false);
+    setError('');
   };
-
-  // --- Render ---
-  const areaPx = calculatePolygonAreaPx(polyPoints);
-  const areaSqFt = pixelsPerFt ? areaPx / (pixelsPerFt * pixelsPerFt) : 0;
-  const hills = getHillsBreakdown(areaSqFt);
 
   return (
-    <div className="h-full w-full flex bg-slate-950 text-white relative overflow-hidden font-sans">
-
-      {/* --- Step 0 - URL Importer (Clean Landing) --- */}
-      {step === MeasureStep.EXTRACT && (
-        <div className="w-full flex items-center justify-center p-8 relative">
-          <div className="max-w-xl w-full z-10 text-center">
-            <h1 className="text-4xl font-bold mb-2 text-white">Smart Measure</h1>
-            <p className="text-slate-400 mb-8 text-lg">Extract map data or upload manually</p>
-
-            {/* Extraction Bar */}
-            <div className="bg-white/5 border border-white/10 p-2 rounded-xl flex gap-2 mb-8 focus-within:ring-2 focus-within:ring-brand-600 transition-all">
-              <div className="pl-4 flex items-center text-slate-500"><Globe size={20} /></div>
-              <input
-                type="text"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                placeholder="Paste Map URL..."
-                className="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0"
-              />
-              <button
-                onClick={handleExtractUrl}
-                disabled={isExtracting}
-                className="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2 rounded-lg font-bold transition-all disabled:opacity-50"
-              >
-                {isExtracting ? 'Analyzing...' : 'Extract'}
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-4 mb-8 opacity-30">
-              <div className="h-px bg-white flex-1"></div>
-              <span className="font-bold text-xs text-white">OR</span>
-              <div className="h-px bg-white flex-1"></div>
-            </div>
-
-            {/* Manual Upload */}
-            <div
-              className="border-2 border-dashed border-white/10 p-8 rounded-xl text-center cursor-pointer hover:bg-white/5 hover:border-brand-600/50 transition-all group"
-              onClick={() => document.getElementById('file-upload')?.click()}
-            >
-              <Upload className="mx-auto mb-2 text-slate-500 group-hover:text-brand-600 transition-colors" size={32} />
-              <span className="text-sm font-bold text-slate-400 group-hover:text-white">Upload Manually</span>
-              <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-            </div>
-          </div>
+    <div className="animate-enter mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-leaf-700">Plot estimator</p>
+          <h1 className="mt-2 font-display text-4xl text-ink-950 sm:text-5xl">Estimate area from a map image.</h1>
+          <p className="mt-3 max-w-3xl text-base leading-7 text-ink-600">Calibrate one known distance, trace the visible boundary, and review the estimate.</p>
         </div>
-      )}
+        {step !== 'SOURCE' && (
+          <button type="button" onClick={reset} className="focus-ring inline-flex items-center gap-2 self-start rounded-xl border border-paper-300 bg-white px-4 py-2.5 text-sm font-bold text-ink-700 hover:bg-paper-50">
+            <RotateCcw size={17} aria-hidden="true" /> Start over
+          </button>
+        )}
+      </div>
 
-      {/* --- WORKSPACE LAYOUT --- */}
-      {image && step !== MeasureStep.EXTRACT && (
-        <>
-          {/* 1. LEFT SIDEBAR (TOOLS) */}
-          <div className="w-16 bg-slate-900 border-r border-white/10 flex flex-col items-center py-6 gap-4 z-20 shadow-xl">
-            <div className="w-8 h-8 bg-brand-600 flex items-center justify-center font-bold text-white rounded-md mb-4 text-xs">V3</div>
+      <ol className="mb-6 grid grid-cols-4 gap-2" aria-label="Measurement steps">
+        {STEPS.map((item, index) => (
+          <li key={item.id} className={`rounded-xl border px-2 py-3 text-center text-xs font-bold sm:text-sm ${item.id === step ? 'border-leaf-500 bg-leaf-50 text-leaf-800' : index < currentIndex ? 'border-leaf-200 bg-white text-leaf-700' : 'border-paper-300 bg-paper-50 text-ink-400'}`}>
+            <span className="hidden sm:inline">{index + 1}. </span>{item.label}
+          </li>
+        ))}
+      </ol>
 
-            <SidebarTool
-              icon={<Sparkles size={18} />}
-              label="Auto"
-              active={step === MeasureStep.CALIBRATE && !showDistInput}
-              onClick={autoDetectScale}
-            />
-            <SidebarTool
-              icon={<MousePointer2 size={18} />}
-              label="Trace"
-              active={step === MeasureStep.TRACE}
-              onClick={() => { }}
-            />
-            <SidebarTool
-              icon={<RotateCcw size={18} />}
-              label="Reset"
-              onClick={() => {
-                setPolyPoints([]);
-                setScalePoints([]);
-                setStep(MeasureStep.CALIBRATE);
-                setIsClosed(false);
-              }}
-            />
-
-            <div className="mt-auto">
-              <SidebarTool
-                icon={<X size={18} />}
-                label="Exit"
-                onClick={() => { setImage(null); setStep(MeasureStep.EXTRACT); }}
-              />
+      {step === 'SOURCE' ? (
+        <section className="grid gap-6 lg:grid-cols-2">
+          <label className="surface-card flex min-h-72 cursor-pointer flex-col items-center justify-center p-7 text-center hover:border-leaf-300">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-leaf-100 text-leaf-800"><Upload size={26} aria-hidden="true" /></span>
+            <span className="mt-5 text-2xl font-bold text-ink-950">Upload a map screenshot</span>
+            <span className="mt-2 max-w-sm text-sm leading-6 text-ink-600">Use a clear top-down image with at least one known distance.</span>
+            <span className="mt-5 rounded-full bg-ink-950 px-4 py-2 text-sm font-bold text-white">Choose image</span>
+            <span className="mt-3 text-xs text-ink-400">PNG, JPG or WebP, up to 15 MB</span>
+            <input type="file" accept="image/*" onChange={upload} className="sr-only" />
+          </label>
+          <div className="surface-card flex min-h-72 flex-col justify-center p-7">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-saffron-100 text-saffron-600"><Link2 size={26} aria-hidden="true" /></span>
+            <h2 className="mt-5 text-2xl font-bold text-ink-950">Try a map page URL</h2>
+            <p className="mt-2 text-sm leading-6 text-ink-600">A third-party screenshot service is used. Protected or private pages may block it.</p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <input type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://maps.example.com/..." className="focus-ring min-h-12 min-w-0 flex-1 rounded-xl border border-paper-300 bg-white px-4" />
+              <button type="button" onClick={importUrl} disabled={busy || !url.trim()} className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink-950 px-4 font-bold text-white disabled:opacity-50"><ImagePlus size={18} aria-hidden="true" />{busy ? 'Importing...' : 'Import'}</button>
             </div>
+            {error && <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm leading-6 text-red-800">{error}</p>}
           </div>
-
-          {/* 2. CENTER CANVAS */}
-          <div className="flex-1 relative bg-slate-950 overflow-hidden cursor-crosshair">
-            <div
-              ref={containerRef}
-              className="w-full h-full relative"
-              onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-              onClick={handleCanvasClick}
-            >
-              <img src={image} className="w-full h-full object-contain opacity-80" alt="Work" />
-
-              <svg
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                viewBox={`0 0 ${imgDims.w} ${imgDims.h}`}
-                preserveAspectRatio="xMidYMid meet"
-              >
-                {/* Scale Elements */}
-                {scalePoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={imgDims.w * 0.005} fill="#2563eb" stroke="white" strokeWidth={1} />)}
-                {scalePoints.length === 2 && <line x1={scalePoints[0].x} y1={scalePoints[0].y} x2={scalePoints[1].x} y2={scalePoints[1].y} stroke="#2563eb" strokeWidth={2} strokeDasharray="5,5" />}
-
-                {/* Polygon Elements */}
-                <path d={`M ${polyPoints.map(p => `${p.x},${p.y}`).join(' L ')} ${isClosed ? 'Z' : ''}`} fill="rgba(37, 99, 235, 0.2)" stroke="#2563eb" strokeWidth={2} />
-                {polyPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={imgDims.w * 0.004} fill="#2563eb" stroke="white" />)}
+        </section>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <section className="surface-card overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-4 py-3 sm:px-5">
+              <div>
+                <p className="text-sm font-bold text-ink-950">{step === 'CALIBRATE' ? 'Set the image scale' : step === 'TRACE' ? 'Trace the plot boundary' : 'Estimated plot'}</p>
+                <p className="mt-0.5 text-xs text-ink-500">{step === 'CALIBRATE' ? 'Select both ends of one known distance.' : step === 'TRACE' ? 'Tap around the boundary in order.' : 'Review the boundary and estimate.'}</p>
+              </div>
+              {step === 'TRACE' && <div className="flex gap-2"><button type="button" onClick={() => setBoundary((items) => items.slice(0, -1))} disabled={!boundary.length} aria-label="Undo last point" className="focus-ring rounded-lg border border-paper-300 bg-white p-2 disabled:opacity-40"><Undo2 size={18} /></button><button type="button" onClick={() => setBoundary([])} disabled={!boundary.length} aria-label="Clear boundary" className="focus-ring rounded-lg border border-paper-300 bg-white p-2 disabled:opacity-40"><Trash2 size={18} /></button></div>}
+            </div>
+            <div ref={workspaceRef} onPointerDown={addPoint} role="application" aria-label="Plot tracing workspace" className={`relative aspect-[4/3] min-h-[360px] w-full touch-none overflow-hidden bg-ink-950 sm:min-h-[480px] ${step === 'RESULT' ? 'cursor-default' : 'cursor-crosshair'}`}>
+              {image && <img src={image} alt="Uploaded plot reference" className="pointer-events-none h-full w-full object-contain opacity-85" />}
+              <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${dimensions.width} ${dimensions.height}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                {scalePoints.length === 2 && <line x1={scalePoints[0].x} y1={scalePoints[0].y} x2={scalePoints[1].x} y2={scalePoints[1].y} stroke="#ffc347" strokeWidth={Math.max(3, dimensions.width * 0.003)} strokeDasharray="12 10" />}
+                {scalePoints.map((point, index) => <circle key={`scale-${index}`} cx={point.x} cy={point.y} r={Math.max(7, dimensions.width * 0.007)} fill="#ffc347" stroke="#fff" strokeWidth="3" />)}
+                {!!boundary.length && <path d={`M ${boundary.map((point) => `${point.x},${point.y}`).join(' L ')} ${step === 'RESULT' ? 'Z' : ''}`} fill={step === 'RESULT' ? 'rgba(45,152,93,.3)' : 'rgba(45,152,93,.16)'} stroke="#83d2a1" strokeWidth={Math.max(3, dimensions.width * 0.003)} />}
+                {boundary.map((point, index) => <circle key={`point-${index}`} cx={point.x} cy={point.y} r={Math.max(6, dimensions.width * 0.006)} fill="#2d985d" stroke="#fff" strokeWidth="3" />)}
               </svg>
-
-              {/* Simple Prompts */}
-              {!showDistInput && step === MeasureStep.CALIBRATE && !isScanning && (
-                <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-slate-900 px-4 py-2 rounded-full border border-white/10 text-white text-sm font-medium shadow-lg pointer-events-none">
-                  Set Scale: Click 2 points
-                </div>
-              )}
-
-              {/* Scanner Overlay (Subtle) */}
-              {isScanning && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none">
-                  <div className="bg-slate-900 px-6 py-3 rounded-full text-white font-medium shadow-xl flex items-center gap-3">
-                    <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
-                    Scanning geometry...
-                  </div>
-                </div>
-              )}
             </div>
+          </section>
 
-            {/* Config Modal */}
-            {showDistInput && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="bg-slate-900 border border-white/10 p-6 rounded-xl w-80 shadow-2xl">
-                  <h3 className="text-white font-bold mb-4">Set Reference Distance</h3>
-                  <div className="flex gap-2 mb-6">
-                    <input
-                      value={realDist}
-                      onChange={e => setRealDist(e.target.value)}
-                      className="flex-1 bg-slate-800 border border-white/10 rounded-lg text-white font-mono text-xl p-2 text-center focus:ring-2 focus:ring-brand-600 focus:outline-none"
-                      autoFocus
-                    />
-                    <div className="bg-slate-800 border border-white/10 px-4 flex items-center text-slate-400 font-bold rounded-lg">FT</div>
-                  </div>
-                  <button onClick={confirmCalibration} className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-bold transition-colors">
-                    Confirm Scale
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 3. RIGHT SIDEBAR (RESULTS) */}
-          {step === MeasureStep.REPORT && (
-            <div className="w-80 bg-slate-900 border-l border-white/10 p-6 flex flex-col z-20 shadow-2xl animate-slide-in-right">
-              <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Total Area</div>
-              <div className="text-4xl font-bold text-white mb-6">
-                {formatDecimal(areaSqFt)} <span className="text-lg text-slate-500">sq.ft</span>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="bg-slate-800/50 p-4 rounded-lg border border-white/5">
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hill System</div>
-                  <div className="text-xl font-mono text-brand-400 font-bold">{hills.ropani}-{hills.aana}-{hills.paisa}-{formatDecimal(hills.daam, 1)}</div>
-                </div>
-                <div className="bg-slate-800/50 p-4 rounded-lg border border-white/5">
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Terai System</div>
-                  <div className="text-xl font-mono text-white font-bold">...</div>
-                </div>
-              </div>
-
-              <div className="mt-auto flex flex-col gap-3">
-                <button onClick={() => closePolygon()} className="w-full py-3 bg-white text-slate-900 rounded-lg font-bold hover:bg-slate-200 transition-colors">
-                  Save Result
-                </button>
-                <button onClick={() => setStep(MeasureStep.TRACE)} className="w-full py-3 text-slate-400 font-bold hover:text-white transition-colors">
-                  Edit Boundary
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+          <aside className="surface-card h-fit p-5 sm:p-6">
+            {step === 'CALIBRATE' && <>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-saffron-600">Reference distance</p>
+              <h2 className="mt-2 text-2xl font-bold text-ink-950">Tell Napiyo what the scale means.</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-600">Select two endpoints of a labelled road width, plot edge, or another distance you know.</p>
+              <div className="mt-5 rounded-2xl bg-paper-100 p-4 text-sm"><span className="font-semibold text-ink-600">Points selected</span><span className="numeral float-right font-bold">{scalePoints.length}/2</span></div>
+              <label htmlFor="reference-distance" className="mt-5 block text-sm font-semibold">Real distance in feet</label>
+              <div className="mt-2 flex overflow-hidden rounded-xl border border-paper-300 bg-white"><input id="reference-distance" inputMode="decimal" value={referenceFeet} onChange={(event) => setReferenceFeet(event.target.value)} className="numeral min-w-0 flex-1 px-4 py-3 text-xl font-bold outline-none" /><span className="flex items-center border-l border-paper-300 bg-paper-50 px-4 text-sm font-bold text-ink-500">FT</span></div>
+              <div className="mt-4 flex gap-2"><button type="button" onClick={() => setScalePoints([])} disabled={!scalePoints.length} className="focus-ring min-h-12 rounded-xl border border-paper-300 bg-white px-4 text-sm font-bold disabled:opacity-40">Reset</button><button type="button" onClick={confirmScale} className="focus-ring min-h-12 flex-1 rounded-xl bg-leaf-700 px-4 text-sm font-bold text-white">Continue</button></div>
+            </>}
+            {step === 'TRACE' && <>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf-700">Boundary trace</p>
+              <h2 className="mt-2 text-2xl font-bold text-ink-950">Outline the visible plot.</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-600">Add points around the boundary in order. More points can follow irregular edges.</p>
+              <div className="mt-5 rounded-2xl bg-paper-100 p-4 text-sm"><span className="font-semibold text-ink-600">Boundary points</span><span className="numeral float-right font-bold">{boundary.length}</span></div>
+              <button type="button" onClick={() => boundary.length >= 3 ? setStep('RESULT') : notify('Add at least three boundary points.')} disabled={boundary.length < 3} className="focus-ring mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf-700 px-4 font-bold text-white disabled:opacity-45">Finish boundary <MapPinned size={18} /></button>
+            </>}
+            {step === 'RESULT' && <>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf-700">Approximate area</p>
+              <p className="numeral mt-2 text-4xl font-bold text-ink-950">{formatDecimal(areaSqFt)} <span className="text-base font-semibold text-ink-500">sq ft</span></p>
+              <p className="numeral mt-1 text-sm font-semibold text-ink-500">{formatDecimal(areaSqM)} sq m</p>
+              <div className="mt-5 space-y-3"><Result label="Hill system" value={formatHills(areaSqFt)} helper="R-A-P-D" /><Result label="Terai system" value={formatTerai(areaSqFt)} helper="B-K-D" /></div>
+              <button type="button" onClick={save} disabled={saved} className="focus-ring mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf-700 px-4 font-bold text-white disabled:bg-leaf-200 disabled:text-leaf-800">{saved ? <Check size={18} /> : <Save size={18} />}{saved ? 'Saved' : 'Save estimate'}</button>
+              <button type="button" onClick={() => setStep('TRACE')} className="focus-ring mt-2 min-h-11 w-full rounded-xl font-bold text-ink-600 hover:bg-paper-100">Edit boundary</button>
+              <div className="mt-4 rounded-xl border border-saffron-200 bg-saffron-50 p-3 text-xs leading-5 text-ink-700">This estimate depends on calibration, image perspective, and tracing. It is not a legal survey.</div>
+            </>}
+          </aside>
+        </div>
       )}
     </div>
   );
 };
 
-const SidebarTool = ({ icon, label, active, onClick }: any) => (
-  <button
-    onClick={onClick}
-    className={`group flex flex-col items-center gap-1 w-full py-2 transition-all ${active ? 'text-brand-600' : 'text-slate-500 hover:text-white'}`}
-  >
-    <div className={`p-2 rounded-lg transition-all ${active ? 'bg-brand-600/10' : 'group-hover:bg-white/5'}`}>
-      {icon}
-    </div>
-    <span className="text-[10px] font-medium opacity-60 group-hover:opacity-100">{label}</span>
-  </button>
-);
+const Result = ({ label, value, helper }: { label: string; value: string; helper: string }) => <div className="surface-muted p-4"><div className="flex justify-between gap-4"><span className="text-sm font-semibold text-ink-500">{label}</span><span className="text-xs font-bold text-ink-400">{helper}</span></div><p className="numeral mt-1 text-xl font-bold text-ink-950">{value}</p></div>;
 
 export default MeasureScreen;

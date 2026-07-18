@@ -1,87 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Napiyo | Nepal Land Unit Converter and Plot Measurement Tool</title>
-  <meta name="description" content="Convert Ropani, Aana, Paisa, Daam, Bigha, Kattha, Dhur, square feet, square meters, acres, and hectares. Napiyo also supports approximate plot tracing, visualization, and saved calculations." />
-  <meta name="keywords" content="Nepal land unit converter, ropani to square feet, aana converter, bigha kattha dhur converter, Nepal land measurement, plot area calculator Nepal, ropani aana paisa daam" />
-  <meta name="author" content="Nischhal Raj Subba" />
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-  <meta name="theme-color" content="#020617" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Napiyo | Nepal Land Area Converter and Plot Estimator</title>
+    <meta name="description" content="Convert Ropani, Aana, Paisa, Daam, Bigha, Kattha, Dhur, square feet, square meters, acres, and hectares. Estimate plot area from an uploaded map image and save calculations on your device." />
+    <meta name="keywords" content="Nepal land unit converter, ropani to square feet, aana converter, bigha kattha dhur converter, Nepal land measurement, plot area estimator Nepal" />
+    <meta name="author" content="Nischhal Raj Subba" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#f4f1e8" />
+    <meta name="color-scheme" content="light" />
 
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Napiyo" />
-  <meta property="og:title" content="Napiyo | Nepal Land Measurement and Unit Converter" />
-  <meta property="og:description" content="Convert Nepal Hill and Terai land units, compare global measurements, trace plot images approximately, and save calculations locally." />
-  <meta property="og:image" content="docs/images/napiyo-readme-hero.svg" />
-  <meta property="og:image:alt" content="Napiyo Nepal land measurement and unit conversion utility" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Napiyo" />
+    <meta property="og:title" content="Napiyo | Nepal Land Area Tools" />
+    <meta property="og:description" content="Understand Nepal land units, estimate plot areas, compare saved calculations, and visualize scale." />
+    <meta property="og:image" content="/docs/images/napiyo-readme-hero.svg" />
+    <meta property="og:image:alt" content="Napiyo Nepal land area tools" />
 
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Napiyo | Nepal Land Measurement and Unit Converter" />
-  <meta name="twitter:description" content="A Nepal-focused converter for Ropani, Aana, Paisa, Daam, Bigha, Kattha, Dhur, and global land units." />
-  <meta name="twitter:image" content="docs/images/napiyo-readme-hero.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Napiyo | Nepal Land Area Tools" />
+    <meta name="twitter:description" content="A clear, Nepal-focused land converter and plot area estimator." />
+    <meta name="twitter:image" content="/docs/images/napiyo-readme-hero.svg" />
 
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Napiyo",
-      "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "Any modern web browser",
-      "description": "A Nepal-focused land conversion, visualization, saved calculation, and approximate plot tracing utility.",
-      "isAccessibleForFree": true,
-      "author": {
-        "@type": "Person",
-        "name": "Nischhal Raj Subba",
-        "url": "https://github.com/Nischhalsubba"
-      },
-      "codeRepository": "https://github.com/Nischhalsubba/Napiyo",
-      "featureList": [
-        "Ropani Aana Paisa Daam conversion",
-        "Bigha Kattha Dhur conversion",
-        "Square feet and square meter conversion",
-        "Approximate plot image calibration and tracing",
-        "Local saved calculation history",
-        "Area visualization"
-      ],
-      "disclaimer": "Results are estimates and do not replace certified survey data, cadastral records, legal documents, or licensed professionals."
-    }
-  </script>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/index.css">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Inter"', 'system-ui', 'sans-serif'],
-            display: ['"Inter"', 'sans-serif'],
-          },
-          colors: {
-            slate: { 850: '#1e293b', 900: '#0f172a', 950: '#020617' },
-            brand: { 600: '#2563eb', 500: '#3b82f6', 300: '#60a5fa', 100: '#eff6ff', 50: '#f8fafc' },
-            glass: { light: 'rgba(255, 255, 255, 0.05)', border: 'rgba(255, 255, 255, 0.1)' }
-          },
-          animation: { 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
-        }
-      }
-    }
-  </script>
-  <style>
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    body { -webkit-tap-highlight-color: transparent; font-family: 'Inter', system-ui, sans-serif; }
-    @keyframes float-up { 0% { transform: translateY(10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-    .animate-enter { animation: float-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-  </style>
-</head>
-<body class="bg-surface-50 text-slate-800 antialiased selection:bg-primary-200 selection:text-primary-900">
-  <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

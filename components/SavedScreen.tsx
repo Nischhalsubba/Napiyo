@@ -1,228 +1,77 @@
-import React, { useState, useMemo } from 'react';
-import { Trash2, Copy, Calendar, Tag, ArrowRight, Search, GitCompare } from 'lucide-react';
-import { SavedItem } from '../types';
-import { formatDecimal, getHillsBreakdown, getTeraiBreakdown } from '../utils/conversions';
+import { useMemo, useState } from 'react';
+import { Bookmark, Check, Copy, Eye, GitCompare, Search, Trash2, X } from 'lucide-react';
+import { SavedFilter, SavedItem } from '../types';
+import { formatDecimal, formatHills, formatTerai } from '../utils/conversions';
 import SegmentedControl from './SegmentedControl';
 
-interface SavedScreenProps {
+interface Props {
   items: SavedItem[];
   onDelete: (id: string) => void;
+  onVisualize: (sqFt: number) => void;
+  notify: (message: string) => void;
 }
 
-const SavedScreen: React.FC<SavedScreenProps> = ({ items, onDelete }) => {
-  const [activeTab, setActiveTab] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+const SavedScreen = ({ items, onDelete, onVisualize, notify }: Props) => {
+  const [filter, setFilter] = useState<SavedFilter>('ALL');
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
 
-  // Filtering
-  const filteredItems = useMemo(() => {
-    let res = items;
-    if (activeTab === 'MEASURED') res = res.filter(i => i.type === 'MEASURED');
-    if (activeTab === 'CONVERTED') res = res.filter(i => i.type === 'CONVERTED');
+  const filtered = useMemo(() => items.filter((item) => {
+    const matchesFilter = filter === 'ALL' || item.type === filter;
+    const searchable = `${item.title} ${formatDecimal(item.sqFt)} ${item.tags.join(' ')}`.toLowerCase();
+    return matchesFilter && searchable.includes(query.trim().toLowerCase());
+  }), [filter, items, query]);
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      res = res.filter(i => i.title.toLowerCase().includes(q));
-    }
-    return res;
-  }, [items, activeTab, searchQuery]);
+  const comparison = selected.length === 2 ? selected.map((id) => items.find((item) => item.id === id)).filter(Boolean) as SavedItem[] : [];
 
-  // Compare Logic
-  const canCompare = selectedIds.length === 2;
-  const compareItems = items.filter(i => selectedIds.includes(i.id));
+  const toggle = (id: string) => {
+    setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length < 2 ? [...current, id] : [current[1], id]);
+  };
 
-  const toggleSelection = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(pid => pid !== id));
-    } else {
-      if (selectedIds.length < 2) {
-        setSelectedIds([...selectedIds, id]);
-      } else {
-        // Replace the second one or show error? Spec says "select 2-3", implies limit.
-        // Let's just limit to 2 for v1.
-        alert("You can only compare 2 items at a time.");
-      }
+  const copy = async (item: SavedItem) => {
+    try {
+      await navigator.clipboard.writeText(`${item.title}: ${formatDecimal(item.sqFt)} sq ft (${formatDecimal(item.sqM)} sq m). Hill ${formatHills(item.sqFt)}. Terai ${formatTerai(item.sqFt)}.`);
+      notify('Saved area copied.');
+    } catch {
+      notify('Copy was blocked by this browser.');
     }
   };
 
-  // --- Views ---
-
-  if (items.length === 0) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-8 animate-enter">
-        <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 text-slate-500">
-          <Calendar size={40} />
-        </div>
-        <h3 className="text-xl font-bold text-slate-300 mb-2">No Saved History</h3>
-        <p className="text-slate-500 max-w-xs">Calculations and measurements you save will appear here.</p>
-      </div>
-    );
-  }
+  if (!items.length) return (
+    <div className="animate-enter mx-auto flex min-h-[62vh] max-w-2xl flex-col items-center justify-center px-4 py-12 text-center">
+      <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-leaf-100 text-leaf-800"><Bookmark size={34} aria-hidden="true" /></span>
+      <h1 className="mt-6 font-display text-4xl text-ink-950">Nothing saved yet.</h1>
+      <p className="mt-3 max-w-md leading-7 text-ink-600">Save a conversion or plot estimate and it will remain on this device for later comparison.</p>
+    </div>
+  );
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden relative">
-
-      {/* Top Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 shrink-0">
-        <SegmentedControl
-          options={[
-            { label: 'All', value: 'ALL' },
-            { label: 'Measured', value: 'MEASURED' },
-            { label: 'Converted', value: 'CONVERTED' },
-          ]}
-          value={activeTab}
-          onChange={setActiveTab}
-          className="w-full md:w-auto min-w-[300px]"
-        />
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-white/40 border border-brand-600/10 rounded-none pl-10 pr-4 py-2 text-sm text-slate-900 focus:outline-none focus:border-brand-500 placeholder-slate-400"
-          />
-        </div>
+    <div className="animate-enter mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mb-6"><p className="text-sm font-bold uppercase tracking-[0.18em] text-leaf-700">Your browser history</p><h1 className="mt-2 font-display text-4xl text-ink-950 sm:text-5xl">Saved areas</h1><p className="mt-3 max-w-2xl leading-7 text-ink-600">Search, compare, copy, or reopen calculations stored on this device.</p></div>
+      <div className="surface-card mb-6 flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <SegmentedControl label="Filter saved areas" value={filter} onChange={setFilter} className="w-full lg:w-auto" options={[{ label: 'All', value: 'ALL' }, { label: 'Converted', value: 'CONVERTED' }, { label: 'Measured', value: 'MEASURED' }]} />
+        <label className="relative block w-full lg:max-w-sm"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" size={18} /><span className="sr-only">Search saved areas</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search saved areas" className="focus-ring min-h-12 w-full rounded-xl border border-paper-300 bg-white pl-11 pr-4" /></label>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 overflow-y-auto pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-enter">
-          {filteredItems.map((item) => (
-            <SavedCard
-              key={item.id}
-              item={item}
-              onDelete={onDelete}
-              selected={selectedIds.includes(item.id)}
-              onToggle={() => toggleSelection(item.id)}
-            />
-          ))}
-        </div>
-      </div>
+      {!filtered.length ? <div className="surface-card p-10 text-center"><h2 className="text-xl font-bold">No matching areas</h2><p className="mt-2 text-sm text-ink-500">Try another search or filter.</p></div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map((item) => {
+        const active = selected.includes(item.id);
+        return <article key={item.id} className={`surface-card overflow-hidden transition ${active ? 'ring-3 ring-leaf-300' : 'hover:-translate-y-0.5 hover:shadow-soft'}`}>
+          <button type="button" onClick={() => toggle(item.id)} aria-pressed={active} className="focus-ring flex w-full items-start justify-between gap-4 p-5 text-left">
+            <div><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${item.type === 'MEASURED' ? 'bg-saffron-100 text-saffron-600' : 'bg-leaf-100 text-leaf-800'}`}>{item.type === 'MEASURED' ? 'Plot estimate' : 'Conversion'}</span><h2 className="mt-3 text-xl font-bold text-ink-950">{item.title}</h2><p className="numeral mt-2 text-3xl font-bold text-ink-950">{formatDecimal(item.sqFt)} <span className="text-sm font-semibold text-ink-500">sq ft</span></p><p className="numeral mt-1 text-sm text-ink-500">{formatDecimal(item.sqM)} sq m</p></div>
+            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${active ? 'border-leaf-700 bg-leaf-700 text-white' : 'border-paper-300 bg-white text-transparent'}`}><Check size={14} /></span>
+          </button>
+          <div className="grid grid-cols-3 gap-px border-t border-paper-200 bg-paper-200"><Action icon={Copy} label="Copy" onClick={() => copy(item)} /><Action icon={Eye} label="Show" onClick={() => onVisualize(item.sqFt)} /><Action icon={Trash2} label="Delete" danger onClick={() => onDelete(item.id)} /></div>
+        </article>;
+      })}</div>}
 
-      {/* Compare Floating Bar */}
-      {selectedIds.length > 0 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-auto min-w-[300px] glass-panel bg-slate-900/90 border border-neon-purple/30 p-4 rounded-xl shadow-2xl flex items-center justify-between z-50 animate-enter">
-          <div className="flex items-center gap-3">
-            <div className="bg-neon-purple/20 text-neon-purple p-2 rounded-lg"><GitCompare size={20} /></div>
-            <div className="text-white text-sm font-bold">Compare ({selectedIds.length}/2)</div>
-          </div>
+      {!!selected.length && <div className="safe-bottom fixed inset-x-4 bottom-22 z-30 mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl bg-ink-950 p-3 text-white shadow-soft md:bottom-5"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10"><GitCompare size={19} /></span><div><p className="text-sm font-bold">{selected.length}/2 selected</p><p className="text-xs text-ink-300">Choose two areas to compare</p></div></div><button type="button" onClick={() => setSelected([])} aria-label="Clear comparison" className="focus-ring rounded-xl p-3 hover:bg-white/10"><X size={19} /></button></div>}
 
-          {canCompare ? (
-            <button
-              onClick={() => { /* Open Modal */ }} // Ideally opens a modal, but for now inline replacement
-              className="px-4 py-2 bg-brand-600 text-white font-bold text-xs rounded-lg hover:bg-brand-500 transition-colors"
-            >
-              View Comparison
-            </button>
-          ) : (
-            <button className="px-4 py-2 bg-white/10 text-slate-500 font-bold text-xs rounded-lg cursor-not-allowed">
-              Select 2 items
-            </button>
-          )}
-
-          <button onClick={() => setSelectedIds([])} className="ml-2 text-slate-500 hover:text-white"><Trash2 size={16} /></button>
-        </div>
-      )}
-
-      {/* Compare Modal (Overlay) */}
-      {canCompare && (
-        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl z-[60] p-8 flex flex-col animate-enter">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-white">Comparison</h2>
-            <button onClick={() => setSelectedIds([])} className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full"><Trash2 size={20} /></button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 flex-1">
-            <CompareColumn item={compareItems[0]} />
-            <div className="w-px bg-white/10 relative">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border border-white/20 p-2 rounded-full text-slate-400 font-bold text-xs">VS</div>
-            </div>
-            <CompareColumn item={compareItems[1]} />
-          </div>
-
-          {/* Delta Footer */}
-          <div className="mt-8 p-6 glass-panel border border-brand-300/20 bg-brand-300/5 text-center">
-            <div className="text-xs uppercase font-bold text-brand-300 tracking-widest mb-2">Difference</div>
-            <div className="text-3xl font-mono font-bold text-white">
-              {formatDecimal(Math.abs(compareItems[0].sqFt - compareItems[1].sqFt))} <span className="text-sm text-slate-400">sq.ft</span>
-            </div>
-            <div className="text-xs text-slate-400 mt-2">
-              {compareItems[0].sqFt > compareItems[1].sqFt ? 'Item 1 is larger' : 'Item 2 is larger'}
-            </div>
-          </div>
-        </div>
-      )}
-
+      {comparison.length === 2 && <div className="fixed inset-0 z-50 overflow-y-auto bg-ink-950/70 p-4 backdrop-blur-sm sm:p-8"><section className="mx-auto max-w-4xl rounded-3xl bg-paper-50 p-5 shadow-soft sm:p-8" role="dialog" aria-modal="true" aria-labelledby="compare-title"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf-700">Side-by-side</p><h2 id="compare-title" className="mt-1 text-3xl font-bold">Compare areas</h2></div><button type="button" onClick={() => setSelected([])} aria-label="Close comparison" className="focus-ring rounded-xl p-3 hover:bg-paper-100"><X size={21} /></button></div><div className="mt-6 grid gap-4 md:grid-cols-2">{comparison.map((item) => <Compare key={item.id} item={item} />)}</div><div className="mt-4 rounded-2xl bg-ink-950 p-5 text-white"><p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf-200">Difference</p><p className="numeral mt-2 text-3xl font-bold">{formatDecimal(Math.abs(comparison[0].sqFt - comparison[1].sqFt))} <span className="text-sm text-ink-300">sq ft</span></p><p className="mt-2 text-sm text-ink-300">{comparison[0].sqFt === comparison[1].sqFt ? 'Both areas are equal.' : `${comparison[0].sqFt > comparison[1].sqFt ? comparison[0].title : comparison[1].title} is larger.`}</p></div></section></div>}
     </div>
   );
 };
 
-const SavedCard: React.FC<{ item: SavedItem; onDelete: (id: string) => void; selected: boolean; onToggle: () => void }> = ({ item, onDelete, selected, onToggle }) => {
-  const dateStr = new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-  return (
-    <div
-      className={`
-            group relative bg-white/60 backdrop-blur-sm p-6 shadow-sm transition-all duration-300 border cursor-pointer
-            ${selected ? 'border-brand-600 bg-brand-600/10' : 'border-brand-600/5 hover:border-brand-600/20 hover:bg-white/80'}
-            rounded-none
-        `}
-      onClick={onToggle}
-    >
-
-      <div className="flex justify-between items-start mb-4">
-        <span className={`
-            px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border
-            ${item.type === 'CONVERTED' ? 'text-indigo-400 border-indigo-400/30' : 'text-emerald-400 border-emerald-400/30'}
-         `}>
-          {item.type}
-        </span>
-        <div className="flex gap-2">
-          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selected ? 'bg-brand-600 border-brand-600' : 'border-slate-600'}`}>
-            {selected && <Check size={12} className="text-white" />}
-          </div>
-        </div>
-      </div>
-
-      <h4 className="font-bold text-slate-900 text-lg leading-tight mb-1 line-clamp-2">{item.title}</h4>
-      <div className="text-2xl font-black text-brand-600 mb-4 font-mono">
-        {formatDecimal(item.sqFt)} <span className="text-sm font-bold text-slate-400">sq.ft</span>
-      </div>
-
-      <div className="flex items-center justify-between mt-auto pt-4 border-t border-brand-600/5">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-          <Calendar size={12} /> {dateStr}
-        </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-          className="text-slate-600 hover:text-red-400 transition-colors p-1"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-
-    </div>
-  );
-};
-
-const CompareColumn: React.FC<{ item: SavedItem }> = ({ item }) => {
-  const hills = getHillsBreakdown(item.sqFt);
-  return (
-    <div className="flex flex-col h-full">
-      <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-4">{item.title}</h3>
-      <div className="text-4xl font-black text-white mb-2">{formatDecimal(item.sqFt)} <span className="text-lg text-slate-500">sq.ft</span></div>
-      <div className="text-slate-400 font-mono text-sm mb-8">{formatDecimal(item.sqFt * 0.092903)} sq.m</div>
-
-      <div className="space-y-4 bg-white/5 p-4 border border-white/5">
-        <div>
-          <div className="text-[10px] text-slate-500 uppercase font-bold">Hill (R-A-P-D)</div>
-          <div className="text-xl font-mono text-white font-bold">{hills.ropani}-{hills.aana}-{hills.paisa}-{formatDecimal(hills.daam, 1)}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const Action = ({ icon: Icon, label, onClick, danger = false }: { icon: typeof Copy; label: string; onClick: () => void; danger?: boolean }) => <button type="button" onClick={onClick} className={`focus-ring inline-flex min-h-12 items-center justify-center gap-2 bg-paper-50 text-xs font-bold hover:bg-white ${danger ? 'text-red-700' : 'text-ink-600'}`}><Icon size={15} />{label}</button>;
+const Compare = ({ item }: { item: SavedItem }) => <div className="surface-muted p-5"><p className="text-sm font-bold text-ink-500">{item.title}</p><p className="numeral mt-2 text-3xl font-bold">{formatDecimal(item.sqFt)} <span className="text-sm text-ink-500">sq ft</span></p><p className="mt-5 text-xs font-bold uppercase tracking-wide text-ink-400">Hill system</p><p className="numeral mt-1 font-bold">{formatHills(item.sqFt)}</p><p className="mt-4 text-xs font-bold uppercase tracking-wide text-ink-400">Terai system</p><p className="numeral mt-1 font-bold">{formatTerai(item.sqFt)}</p></div>;
 
 export default SavedScreen;

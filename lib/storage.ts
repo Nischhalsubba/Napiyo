@@ -1,42 +1,59 @@
 import { SavedItem } from '../types';
 
-const STORAGE_KEY = 'hamrotools:napiyo:v1';
+const STORAGE_KEY = 'napiyo:saved-items:v2';
+const LEGACY_KEY = 'hamrotools:napiyo:v1';
 
 interface StorageSchema {
-    version: number;
-    items: SavedItem[];
+  version: 2;
+  items: SavedItem[];
 }
 
-export const loadItems = (): SavedItem[] => {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-
-        // Check for legacy data (if any existed before v1)
-        if (!raw.includes('"version":')) {
-            // Handle migration if needed, or just allow legacy array to be parsed if valid
-            // For now, assume fresh start or compatible array
-            const legacy = JSON.parse(raw);
-            if (Array.isArray(legacy)) return legacy;
-        }
-
-        const data: StorageSchema = JSON.parse(raw);
-        return data.items || [];
-    } catch (e) {
-        console.error("Failed to load items", e);
-        return [];
-    }
+const isSavedItem = (value: unknown): value is SavedItem => {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Partial<SavedItem>;
+  return (
+    typeof item.id === 'string' &&
+    typeof item.title === 'string' &&
+    typeof item.sqFt === 'number' &&
+    typeof item.date === 'number' &&
+    (item.type === 'CONVERTED' || item.type === 'MEASURED')
+  );
 };
 
-export const saveItems = (items: SavedItem[]) => {
-    try {
-        const payload: StorageSchema = {
-            version: 1,
-            items
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch (e) {
-        console.error("Failed to save items", e);
-        alert("Storage full or unavailable. Some data may not be saved.");
+const normalizeItems = (items: unknown[]): SavedItem[] =>
+  items.filter(isSavedItem).map((item) => ({
+    ...item,
+    sqM: typeof item.sqM === 'number' ? item.sqM : item.sqFt * 0.09290304,
+    tags: Array.isArray(item.tags) ? item.tags : [],
+  }));
+
+export const loadItems = (): SavedItem[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
+    if (!raw) return [];
+
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) return normalizeItems(parsed);
+
+    if (parsed && typeof parsed === 'object' && 'items' in parsed) {
+      const items = (parsed as { items?: unknown }).items;
+      return Array.isArray(items) ? normalizeItems(items) : [];
     }
+
+    return [];
+  } catch (error) {
+    console.error('Napiyo could not read saved calculations.', error);
+    return [];
+  }
+};
+
+export const saveItems = (items: SavedItem[]): boolean => {
+  try {
+    const payload: StorageSchema = { version: 2, items };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    return true;
+  } catch (error) {
+    console.error('Napiyo could not save calculations.', error);
+    return false;
+  }
 };

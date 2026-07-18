@@ -1,5 +1,9 @@
 # Repository Instructions
 
+## Product
+
+Napiyo is a Nepal-focused land area utility. Preserve conversion accuracy, plain-language explanations, mobile usability, and the legal-survey disclaimer.
+
 ## Setup
 
 ```bash
@@ -7,74 +11,35 @@ npm install
 npm run dev
 ```
 
-Build and preview:
+## Commands
 
 ```bash
+npm run check
 npm run build
 npm run preview
 ```
 
-## Product scope
+## Conventions
 
-Napiyo is a Nepal-focused land-unit conversion and visual measurement prototype. It converts Hill, Terai, and international units, supports local saved history, and includes a manually calibrated image-tracing workflow for approximate plot-area measurement.
+- Use strict TypeScript and semantic React components.
+- Keep conversion factors in `constants.ts` and conversion logic in `utils/conversions.ts`.
+- Keep screens keyboard accessible and mobile-first.
+- Use the design tokens defined in `index.css` instead of adding one-off colours.
+- Use Lucide icons rather than emoji or text symbols for interface actions.
+- Write direct, specific microcopy. Do not imply AI or automatic detection unless the feature genuinely performs it.
+- Treat image-based plot results as estimates and show the disclaimer near the result.
 
-## Key files
+## Testing and verification
 
-- `App.tsx`: top-level screen routing and saved-item state.
-- `components/ConvertScreen.tsx`: conversion inputs and results.
-- `components/MeasureScreen.tsx`: image loading, calibration, polygon tracing, and report flow.
-- `components/SavedScreen.tsx`: local history.
-- `components/VisualizeScreen.tsx`: area comparison and visualization.
-- `utils/conversions`: unit conversion and polygon calculations.
-- `constants`: supported units and conversion factors.
-- `lib/storage`: browser persistence.
-- `docs/images/napiyo-readme-hero.svg`: repository presentation asset.
-
-## Accuracy rules
-
-- Keep one documented internal base unit for conversions.
-- Do not change a conversion constant without a cited source and verification date.
-- Treat Smart Measure output as an estimate.
-- Keep manual calibration visible and editable.
-- Do not describe prototype scale placement as computer vision.
-- Never represent calculated output as certified survey, cadastral, legal, tax, or ownership evidence.
-
-## Engineering conventions
-
-- Keep conversion functions pure and testable.
-- Keep display formatting separate from numeric conversion.
-- Preserve deterministic calculations for identical inputs.
-- Validate image dimensions, calibration distance, and polygon point count.
-- Avoid storing large uploaded image data in local history without an explicit storage policy.
-- Keep external screenshot-service failures recoverable through manual upload.
-
-## Accessibility and UX
-
-- Keep all unit inputs labeled.
-- Make keyboard focus visible.
-- Do not communicate measurement state through color alone.
-- Provide text instructions for calibration and polygon closure.
-- Test the fixed-height shell and floating dock on narrow mobile screens.
-- Replace browser alerts and confirms with accessible dialogs when practical.
-
-## Verification
-
-Before meaningful changes:
-
-1. Run `npm run build`.
-2. Test representative Hill, Terai, and global conversions.
-3. Test zero, negative, decimal, and very large inputs.
-4. Test manual image upload.
-5. Test failed URL extraction.
-6. Test calibration and polygon closure.
-7. Compare a known rectangle against an independently calculated area.
-8. Test saving and deleting history.
-9. Review desktop and mobile layouts.
+- Run `npm run check` after TypeScript changes.
+- Run `npm run build` before opening a pull request.
+- Verify converter math with at least 1 Ropani, 1 Aana, 1 Bigha, and 1 Kattha.
+- Verify phone layouts around 320 px and 390 px widths.
+- Verify keyboard focus, dialogs, upload errors, saved-item deletion, and comparison selection.
 
 ## Do not
 
-- Do not claim legal or survey accuracy.
-- Do not advertise an AI feature unless active code supports it.
-- Do not hard-code unexplained conversion constants.
-- Do not present the README hero as a browser screenshot.
-- Do not publish user land images or location data without a privacy model.
+- Do not add Vercel-specific configuration.
+- Do not expose API keys in the Vite client bundle.
+- Do not replace reliable manual measurement with fake automatic detection.
+- Do not remove the legal and accuracy disclaimers.

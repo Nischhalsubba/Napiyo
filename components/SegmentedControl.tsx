@@ -1,34 +1,27 @@
-import React from 'react';
-
-interface SegmentedControlProps {
-    options: { label: string; value: string }[];
-    value: string;
-    onChange: (value: string) => void;
-    className?: string; // Allow custom styling
+interface SegmentedOption<T extends string> {
+  label: string;
+  value: T;
 }
 
-const SegmentedControl: React.FC<SegmentedControlProps> = ({ options, value, onChange, className }) => {
-    return (
-        <div className={`glass-panel p-1 flex items-center rounded-none bg-white/40 border border-brand-600/10 ${className}`}>
-            {options.map((opt) => {
-                const isActive = value === opt.value;
-                return (
-                    <button
-                        key={opt.value}
-                        onClick={() => onChange(opt.value)}
-                        className={`
-              flex-1 py-3 px-4 text-sm font-bold uppercase tracking-wider transition-all rounded-none
-              ${isActive
-                                ? 'bg-white text-brand-600 shadow-md shadow-brand-600/10 border border-brand-600/10'
-                                : 'text-slate-500 hover:text-slate-900 hover:bg-white/20'}
-            `}
-                    >
-                        {opt.label}
-                    </button>
-                );
-            })}
-        </div>
-    );
-};
+interface SegmentedControlProps<T extends string> {
+  options: SegmentedOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  label: string;
+  className?: string;
+}
+
+const SegmentedControl = <T extends string>({ options, value, onChange, label, className = '' }: SegmentedControlProps<T>) => (
+  <div className={`inline-flex rounded-2xl border border-paper-300 bg-paper-100 p-1 ${className}`} role="group" aria-label={label}>
+    {options.map((option) => {
+      const active = option.value === value;
+      return (
+        <button key={option.value} type="button" onClick={() => onChange(option.value)} aria-pressed={active} className={`focus-ring min-h-10 flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition sm:px-4 ${active ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500 hover:bg-white/60 hover:text-ink-900'}`}>
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+);
 
 export default SegmentedControl;
