@@ -1,169 +1,279 @@
-import React, { useState } from 'react';
-import { Save, ChevronDown, Repeat, Copy, Eye, X, LayoutGrid } from 'lucide-react';
-import { UNITS } from '../constants';
-import { toSqFt, formatDecimal, getHillsBreakdown, getTeraiBreakdown } from '../utils/conversions';
-import { SavedItem, UnitSystem } from '../types';
+import { useMemo, useState } from 'react';
+import {
+  BookmarkPlus,
+  Check,
+  ChevronDown,
+  Copy,
+  Eye,
+  Info,
+  MoveRight,
+} from 'lucide-react';
+import { QUICK_VALUES, UNIT_GROUPS, UNITS } from '../constants';
+import { SavedItem } from '../types';
+import {
+  formatDecimal,
+  formatHills,
+  formatTerai,
+  getAllConversions,
+  parseAreaInput,
+  toSqFt,
+  toSqM,
+} from '../utils/conversions';
 
 interface ConvertScreenProps {
-  onSave: (item: SavedItem) => void;
+  onSave: (item: SavedItem) => boolean;
   onVisualize: (sqFt: number) => void;
+  notify: (message: string) => void;
 }
 
-const ConvertScreen: React.FC<ConvertScreenProps> = ({ onSave, onVisualize }) => {
-  const [val, setVal] = useState<string>('1');
-  const [unit, setUnit] = useState<string>('ROPANI');
-  const [showAllUnits, setShowAllUnits] = useState(false);
+const ConvertScreen = ({ onSave, onVisualize, notify }: ConvertScreenProps) => {
+  const [value, setValue] = useState('1');
+  const [unit, setUnit] = useState('ROPANI');
+  const [showAll, setShowAll] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Derived
-  const numVal = parseFloat(val) || 0;
-  const sqFt = toSqFt(numVal, unit);
-  const sqM = sqFt * 0.092903;
-  const hills = getHillsBreakdown(sqFt);
-  const terai = getTeraiBreakdown(sqFt);
+  const numericValue = parseAreaInput(value);
+  const sqFt = toSqFt(numericValue, unit);
+  const sqM = toSqM(sqFt);
+  const selectedUnit = UNITS[unit];
+  const conversions = useMemo(() => getAllConversions(sqFt), [sqFt]);
+  const hasValue = numericValue > 0;
 
-  // Helper
-  const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const summary = `${formatDecimal(numericValue, 4)} ${selectedUnit.name} = ${formatDecimal(sqFt)} sq ft = ${formatDecimal(sqM)} sq m. Hill: ${formatHills(sqFt)} R-A-P-D. Terai: ${formatTerai(sqFt)} B-K-D.`;
+
+  const copySummary = async () => {
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+      notify('Conversion copied to your clipboard.');
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      notify('Copy was blocked by this browser.');
+    }
+  };
+
+  const saveCalculation = () => {
+    if (!hasValue) {
+      notify('Enter an area greater than zero before saving.');
+      return;
+    }
+
+    const saved = onSave({
+      id: crypto.randomUUID(),
+      title: `${formatDecimal(numericValue, 4)} ${selectedUnit.name}`,
+      sqFt,
+      sqM,
+      date: Date.now(),
+      type: 'CONVERTED',
+      tags: [selectedUnit.system.toLowerCase()],
+      source: {
+        inputValue: value,
+        inputUnit: unit,
+      },
+    });
+
+    notify(saved ? 'Calculation saved on this device.' : 'This browser could not save the calculation.');
+  };
 
   return (
-    <div className="h-full w-full flex flex-col p-6 animate-fade-in relative overflow-hidden">
-
-      {/* --- MANTRA / QUESTION SECTION (Top Half) --- */}
-      <div className="flex-1 flex flex-col justify-center items-center gap-4 min-h-[30vh]">
-        <div className="text-slate-300 font-bold text-sm uppercase tracking-widest">I have</div>
-
-        {/* Massive Input */}
-        <input
-          type="number"
-          value={val}
-          onChange={e => setVal(e.target.value)}
-          className="w-full text-center bg-transparent border-none text-8xl font-display font-black text-white focus:ring-0 p-0 placeholder-slate-600 tracking-tighter"
-          placeholder="0"
-        />
-
-        {/* Large Unit Selector */}
-        <div className="relative group">
-          <select
-            value={unit}
-            onChange={e => setUnit(e.target.value)}
-            className="appearance-none bg-slate-800 hover:bg-slate-700 text-white font-bold text-3xl py-3 pl-8 pr-16 rounded-2xl cursor-pointer transition-colors focus:outline-none text-center min-w-[200px] border border-white/20"
-          >
-            {Object.values(UNITS).map(u => (
-              <option key={u.id} value={u.id} className="bg-slate-900 text-lg">{u.name}</option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={28} />
-        </div>
-      </div>
-
-      {/* --- ANSWER SECTION (Bottom Half) --- */}
-      {/* --- ANSWER SECTION (Bottom Half) --- */}
-      <div className="flex-1 flex flex-col justify-start items-center pt-6 border-t border-white/20">
-        <div className="text-slate-300 font-bold text-sm uppercase tracking-widest mb-4">That is equal to</div>
-
-        {/* 3-Card Result Grid */}
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-3 animate-enter mb-6">
-
-          {/* Card 1: Hill System (Local) */}
-          <div className="bg-slate-800 border border-white/20 p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
-            <div className="text-[10px] uppercase font-bold text-slate-300 tracking-widest mb-1">Hill System</div>
-            <div className="text-xl font-mono font-bold text-white relative z-10">
-              {hills.ropani}-{hills.aana}-{hills.paisa}-{formatDecimal(hills.daam, 1)}
-            </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-1">Ropani-Aana-Paisa-Daam</div>
+    <div className="animate-enter mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-8">
+        <div className="surface-card p-5 sm:p-7 lg:sticky lg:top-28 lg:self-start">
+          <div className="mb-7">
+            <p className="mb-2 text-sm font-bold uppercase tracking-[0.18em] text-leaf-700">Land area converter</p>
+            <h1 className="font-display text-4xl leading-tight text-ink-950 sm:text-5xl">
+              Start with the unit you already know.
+            </h1>
+            <p className="mt-3 max-w-xl text-base leading-7 text-ink-600">
+              Convert between Nepal&apos;s Hill and Terai systems and commonly used global area units.
+            </p>
           </div>
 
-          {/* Card 2: Terai System (Local) */}
-          <div className="bg-slate-800 border border-white/20 p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
-            <div className="text-[10px] uppercase font-bold text-slate-300 tracking-widest mb-1">Terai System</div>
-            <div className="text-xl font-mono font-bold text-white relative z-10">
-              {terai.bigha}-{terai.kattha}-{formatDecimal(terai.dhur, 1)}
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="area-value" className="mb-2 block text-sm font-semibold text-ink-800">
+                Area value
+              </label>
+              <input
+                id="area-value"
+                inputMode="decimal"
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                placeholder="Enter an area"
+                aria-describedby="area-help"
+                className="focus-ring numeral w-full rounded-2xl border border-paper-300 bg-white px-4 py-4 text-3xl font-bold text-ink-950 shadow-inner placeholder:text-ink-300 sm:text-4xl"
+              />
+              <p id="area-help" className="mt-2 text-sm text-ink-500">
+                Decimals are supported. Negative values are ignored.
+              </p>
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-1">Bigha-Kattha-Dhur</div>
-          </div>
 
-          {/* Card 3: Global System (Global) */}
-          <div className="bg-slate-800 border border-white/20 p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-colors">
-            <div className="text-[10px] uppercase font-bold text-slate-300 tracking-widest mb-1">Global Units</div>
-            <div className="text-xl font-bold text-brand-400 relative z-10">
-              {fmt(sqFt)} <span className="text-xs text-slate-400 font-normal">sq.ft</span>
+            <div>
+              <label htmlFor="area-unit" className="mb-2 block text-sm font-semibold text-ink-800">
+                Starting unit
+              </label>
+              <div className="relative">
+                <select
+                  id="area-unit"
+                  value={unit}
+                  onChange={(event) => setUnit(event.target.value)}
+                  className="focus-ring w-full appearance-none rounded-2xl border border-paper-300 bg-white px-4 py-4 pr-12 text-lg font-semibold text-ink-950"
+                >
+                  {UNIT_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.units.map((unitId) => (
+                        <option key={unitId} value={unitId}>
+                          {UNITS[unitId].name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-ink-500"
+                  size={20}
+                />
+              </div>
+              <div className="mt-3 flex gap-2 rounded-xl bg-leaf-50 p-3 text-sm leading-6 text-leaf-900">
+                <Info aria-hidden="true" className="mt-0.5 shrink-0" size={17} />
+                <span>{selectedUnit.description}</span>
+              </div>
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-1">
-              {fmt(sqM)} sq.m
+
+            <div>
+              <p className="mb-2 text-sm font-semibold text-ink-800">Common starting points</p>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_VALUES.map((quickValue) => (
+                  <button
+                    key={quickValue.label}
+                    type="button"
+                    onClick={() => {
+                      setValue(quickValue.value);
+                      setUnit(quickValue.unit);
+                    }}
+                    className="focus-ring rounded-full border border-paper-300 bg-paper-50 px-3 py-2 text-sm font-semibold text-ink-700 transition hover:border-leaf-300 hover:bg-leaf-50 hover:text-leaf-800"
+                  >
+                    {quickValue.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Action Bar */}
-        <div className="w-full max-w-4xl flex items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <button onClick={() => setShowAllUnits(true)} className="text-slate-300 hover:text-white flex items-center gap-2 font-bold text-xs bg-slate-800 px-3 py-2 rounded-lg transition-colors border border-white/20 hover:border-brand-500">
-              <LayoutGrid size={14} /> View All
-            </button>
-            <button onClick={() => onVisualize(sqFt)} className="text-brand-400 hover:text-white flex items-center gap-2 font-bold text-xs bg-slate-800 px-3 py-2 rounded-lg transition-colors border border-white/20 hover:border-brand-500">
-              <Eye size={14} /> Visualize
-            </button>
-          </div>
-
-          <button
-            onClick={() => {
-              onSave({ id: Date.now().toString(), title: `${val} ${UNITS[unit].name}`, sqFt, date: Date.now(), type: 'CONVERTED', tags: [] });
-              alert("Saved");
-            }}
-            className="bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg px-4 py-2 transition-colors flex items-center gap-2 shadow-lg uppercase tracking-wide text-xs"
-          >
-            <Save size={14} /> Save
-          </button>
         </div>
 
-        {/* --- ALL UNITS MODAL --- */}
-        {showAllUnits && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-            <div className="bg-slate-900 border border-white/20 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+        <div className="space-y-6">
+          <div className="surface-card overflow-hidden">
+            <div className="border-b border-paper-200 bg-ink-950 px-5 py-5 text-white sm:px-7">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-leaf-200">Converted area</p>
+              <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
+                <span className="numeral text-4xl font-bold sm:text-5xl">{formatDecimal(sqFt)}</span>
+                <span className="pb-1 text-lg font-semibold text-ink-200">square feet</span>
+              </div>
+              <p className="numeral mt-2 text-sm text-ink-200">{formatDecimal(sqM)} square metres</p>
+            </div>
+
+            <div className="grid gap-px bg-paper-200 sm:grid-cols-2">
+              <ResultBlock
+                eyebrow="Hill system"
+                value={formatHills(sqFt)}
+                label="Ropani - Aana - Paisa - Daam"
+              />
+              <ResultBlock
+                eyebrow="Terai system"
+                value={formatTerai(sqFt)}
+                label="Bigha - Kattha - Dhur"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-paper-200 p-5 sm:flex-row sm:flex-wrap sm:p-7">
               <button
-                onClick={() => setShowAllUnits(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+                type="button"
+                onClick={saveCalculation}
+                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-leaf-700 px-4 py-3 font-bold text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!hasValue}
               >
-                <X size={24} />
+                <BookmarkPlus aria-hidden="true" size={18} />
+                Save calculation
               </button>
-
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <LayoutGrid size={20} className="text-brand-500" />
-                All Popular Units
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Meters</div>
-                  <div className="text-2xl font-mono text-white font-bold">{fmt(sqM)}</div>
-                  <div className="text-xs text-slate-500">sq.m</div>
-                </div>
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Square Yards</div>
-                  <div className="text-2xl font-mono text-white font-bold">{fmt(sqFt / 9)}</div>
-                  <div className="text-xs text-slate-500">sq.yd</div>
-                </div>
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Hectares</div>
-                  <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 107639, 4)}</div>
-                  <div className="text-xs text-slate-500">ha</div>
-                </div>
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/10">
-                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Acres</div>
-                  <div className="text-2xl font-mono text-white font-bold">{formatDecimal(sqFt / 43560, 4)}</div>
-                  <div className="text-xs text-slate-500">ac</div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-white/10 text-center">
-                <p className="text-slate-500 text-xs">Based on standard conversion rates.</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => onVisualize(sqFt)}
+                disabled={!hasValue}
+                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-paper-300 bg-white px-4 py-3 font-bold text-ink-800 transition hover:border-ink-300 hover:bg-paper-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Eye aria-hidden="true" size={18} />
+                Visualize area
+              </button>
+              <button
+                type="button"
+                onClick={copySummary}
+                disabled={!hasValue}
+                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 py-3 font-bold text-ink-600 transition hover:bg-paper-100 hover:text-ink-950 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {copied ? <Check aria-hidden="true" size={18} /> : <Copy aria-hidden="true" size={18} />}
+                {copied ? 'Copied' : 'Copy result'}
+              </button>
             </div>
           </div>
-        )}
 
-      </div>
+          <section className="surface-card p-5 sm:p-7" aria-labelledby="more-units-title">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-saffron-600">Reference values</p>
+                <h2 id="more-units-title" className="mt-1 text-2xl font-bold text-ink-950">
+                  Compare common global units
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-ink-600">
+                  Useful when a listing, survey, or drawing uses a different standard.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAll((current) => !current)}
+                aria-expanded={showAll}
+                className="focus-ring inline-flex items-center gap-2 self-start rounded-xl border border-paper-300 bg-white px-4 py-2.5 text-sm font-bold text-ink-800 transition hover:bg-paper-50"
+              >
+                {showAll ? 'Show less' : 'Show all units'}
+                <MoveRight aria-hidden="true" size={17} />
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {conversions.slice(0, showAll ? conversions.length : 2).map((conversion) => (
+                <div key={conversion.id} className="surface-muted p-4">
+                  <p className="text-sm font-semibold text-ink-500">{conversion.label}</p>
+                  <p className="numeral mt-1 text-2xl font-bold text-ink-950">
+                    {formatDecimal(conversion.value, conversion.value < 1 ? 5 : 2)}{' '}
+                    <span className="text-sm font-semibold text-ink-500">{conversion.suffix}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <aside className="rounded-2xl border border-saffron-200 bg-saffron-50 p-4 text-sm leading-6 text-ink-700">
+            <strong className="text-ink-950">Use these figures for understanding and estimation.</strong>{' '}
+            Confirm legal boundaries, ownership, and official area with cadastral records and a licensed survey professional.
+          </aside>
+        </div>
+      </section>
     </div>
   );
 };
+
+interface ResultBlockProps {
+  eyebrow: string;
+  value: string;
+  label: string;
+}
+
+const ResultBlock = ({ eyebrow, value, label }: ResultBlockProps) => (
+  <div className="bg-paper-50 p-5 sm:p-7">
+    <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink-500">{eyebrow}</p>
+    <p className="numeral mt-2 break-words text-3xl font-bold text-ink-950">{value}</p>
+    <p className="mt-2 text-sm text-ink-500">{label}</p>
+  </div>
+);
 
 export default ConvertScreen;

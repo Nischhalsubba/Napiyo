@@ -1,63 +1,81 @@
-import { UNITS } from '../constants';
+import { SQ_FT_PER_SQ_M, UNITS } from '../constants';
+import { Point } from '../types';
 
 export const toSqFt = (value: number, unitId: string): number => {
-  const factor = UNITS[unitId]?.sqFtFactor || 1;
-  return value * factor;
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return value * (UNITS[unitId]?.sqFtFactor ?? 1);
 };
 
 export const fromSqFt = (sqFt: number, unitId: string): number => {
-  const factor = UNITS[unitId]?.sqFtFactor || 1;
-  return sqFt / factor;
+  if (!Number.isFinite(sqFt) || sqFt < 0) return 0;
+  return sqFt / (UNITS[unitId]?.sqFtFactor ?? 1);
 };
 
-export const formatDecimal = (num: number, decimals = 2): string => {
-  return num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+export const toSqM = (sqFt: number): number => sqFt / SQ_FT_PER_SQ_M;
+
+export const parseAreaInput = (value: string): number => {
+  const normalized = value.replace(/,/g, '').trim();
+  if (!normalized) return 0;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 };
 
-// Breakdown Logic (e.g. 5.5 Ropani -> 5 Ropani, 8 Aana...)
+export const formatDecimal = (value: number, decimals = 2): string => {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: decimals,
+    minimumFractionDigits: 0,
+  }).format(safeValue);
+};
+
 export const getHillsBreakdown = (sqFt: number) => {
-  let remaining = sqFt;
-  
-  const ropani = Math.floor(remaining / UNITS.ROPANI.sqFtFactor);
-  remaining %= UNITS.ROPANI.sqFtFactor;
-  
-  const aana = Math.floor(remaining / UNITS.AANA.sqFtFactor);
-  remaining %= UNITS.AANA.sqFtFactor;
-  
-  const paisa = Math.floor(remaining / UNITS.PAISA.sqFtFactor);
-  remaining %= UNITS.PAISA.sqFtFactor;
-  
-  const daam = remaining / UNITS.DAAM.sqFtFactor; // Keep decimal for last unit
-
+  let remainingDaam = Math.max(0, sqFt) / UNITS.DAAM.sqFtFactor;
+  const ropani = Math.floor(remainingDaam / 256);
+  remainingDaam -= ropani * 256;
+  const aana = Math.floor(remainingDaam / 16);
+  remainingDaam -= aana * 16;
+  const paisa = Math.floor(remainingDaam / 4);
+  const daam = remainingDaam - paisa * 4;
   return { ropani, aana, paisa, daam };
 };
 
 export const getTeraiBreakdown = (sqFt: number) => {
-  let remaining = sqFt;
-  
-  const bigha = Math.floor(remaining / UNITS.BIGHA.sqFtFactor);
-  remaining %= UNITS.BIGHA.sqFtFactor;
-  
-  const kattha = Math.floor(remaining / UNITS.KATTHA.sqFtFactor);
-  remaining %= UNITS.KATTHA.sqFtFactor;
-  
-  const dhur = remaining / UNITS.DHUR.sqFtFactor; // Keep decimal for last unit
-  
+  let remainingDhur = Math.max(0, sqFt) / UNITS.DHUR.sqFtFactor;
+  const bigha = Math.floor(remainingDhur / 400);
+  remainingDhur -= bigha * 400;
+  const kattha = Math.floor(remainingDhur / 20);
+  const dhur = remainingDhur - kattha * 20;
   return { bigha, kattha, dhur };
 };
 
-// Geometry for Measure Tool
-export const calculatePolygonAreaPx = (points: {x: number, y: number}[]) => {
+export const formatHills = (sqFt: number): string => {
+  const value = getHillsBreakdown(sqFt);
+  return `${value.ropani}-${value.aana}-${value.paisa}-${formatDecimal(value.daam, 2)}`;
+};
+
+export const formatTerai = (sqFt: number): string => {
+  const value = getTeraiBreakdown(sqFt);
+  return `${value.bigha}-${value.kattha}-${formatDecimal(value.dhur, 2)}`;
+};
+
+export const getAllConversions = (sqFt: number) => [
+  { id: 'SQFT', label: 'Square feet', value: sqFt, suffix: 'sq ft' },
+  { id: 'SQM', label: 'Square metres', value: toSqM(sqFt), suffix: 'sq m' },
+  { id: 'SQYD', label: 'Square yards', value: sqFt / 9, suffix: 'sq yd' },
+  { id: 'ACRE', label: 'Acres', value: sqFt / 43560, suffix: 'acres' },
+  { id: 'HECTARE', label: 'Hectares', value: sqFt / 107639.104167, suffix: 'ha' },
+];
+
+export const calculatePolygonAreaPx = (points: Point[]): number => {
   if (points.length < 3) return 0;
   let area = 0;
-  for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    area += points[i].x * points[j].y;
-    area -= points[j].x * points[i].y;
+  for (let index = 0; index < points.length; index += 1) {
+    const nextIndex = (index + 1) % points.length;
+    area += points[index].x * points[nextIndex].y;
+    area -= points[nextIndex].x * points[index].y;
   }
   return Math.abs(area / 2);
 };
 
-export const distance = (p1: {x: number, y: number}, p2: {x: number, y: number}) => {
-  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-};
+export const distance = (first: Point, second: Point): number =>
+  Math.hypot(second.x - first.x, second.y - first.y);
