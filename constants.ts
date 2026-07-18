@@ -2,6 +2,21 @@ import { UnitDefinition, UnitSystem } from './types';
 
 export const SQ_FT_PER_SQ_M = 10.7639104167;
 
+export const CONVERSION_REFERENCE = {
+  source: 'Global IME Bank land area converter',
+  url: 'https://www.globalimebank.com/blog/nepal-land-area-converter/',
+  note: 'Square-foot relationships are used as the canonical calculation base. Metric values are derived from 1 m² = 10.7639 sq ft.',
+  rates: [
+    { unit: '1 Ropani', relation: '16 Aana · 5,476 sq ft · about 508.72 m²' },
+    { unit: '1 Aana', relation: '4 Paisa · 342.25 sq ft · about 31.80 m²' },
+    { unit: '1 Paisa', relation: '4 Daam · 85.56 sq ft · about 7.95 m²' },
+    { unit: '1 Daam', relation: '21.39 sq ft · about 1.99 m²' },
+    { unit: '1 Bigha', relation: '20 Kattha · 400 Dhur · 72,900 sq ft · about 6,772.63 m²' },
+    { unit: '1 Kattha', relation: '20 Dhur · 3,645 sq ft · about 338.63 m²' },
+    { unit: '1 Dhur', relation: '182.25 sq ft · about 16.93 m²' },
+  ],
+} as const;
+
 export const UNITS: Record<string, UnitDefinition> = {
   ROPANI: {
     id: 'ROPANI',
@@ -9,7 +24,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'ropani',
     sqFtFactor: 5476,
     system: UnitSystem.HILLS,
-    description: 'Hill-region land unit. 1 Ropani = 16 Aana.',
+    description: 'Hill system: 1 Ropani = 16 Aana = 5,476 sq ft.',
   },
   AANA: {
     id: 'AANA',
@@ -25,7 +40,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'paisa',
     sqFtFactor: 85.5625,
     system: UnitSystem.HILLS,
-    description: '1 Paisa = 4 Daam.',
+    description: '1 Paisa = 4 Daam = 85.5625 sq ft.',
   },
   DAAM: {
     id: 'DAAM',
@@ -33,7 +48,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'daam',
     sqFtFactor: 21.390625,
     system: UnitSystem.HILLS,
-    description: 'The smallest unit in the Ropani system.',
+    description: 'Smallest Hill-system unit: 1 Daam = 21.390625 sq ft.',
   },
   BIGHA: {
     id: 'BIGHA',
@@ -41,7 +56,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'bigha',
     sqFtFactor: 72900,
     system: UnitSystem.TERAI,
-    description: 'Terai land unit. 1 Bigha = 20 Kattha.',
+    description: 'Terai system: 1 Bigha = 20 Kattha = 72,900 sq ft.',
   },
   KATTHA: {
     id: 'KATTHA',
@@ -57,7 +72,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'dhur',
     sqFtFactor: 182.25,
     system: UnitSystem.TERAI,
-    description: 'The smaller commonly used unit in the Terai system.',
+    description: 'Smallest commonly used Terai unit: 1 Dhur = 182.25 sq ft.',
   },
   SQFT: {
     id: 'SQFT',
@@ -65,20 +80,20 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'sq ft',
     sqFtFactor: 1,
     system: UnitSystem.GLOBAL,
-    description: 'International area unit used in property listings and plans.',
+    description: 'Common property-listing and floor-plan area unit.',
   },
   SQM: {
     id: 'SQM',
     name: 'Square metres',
-    shortName: 'sq m',
+    shortName: 'm²',
     sqFtFactor: SQ_FT_PER_SQ_M,
     system: UnitSystem.GLOBAL,
-    description: 'Metric area unit used in survey and construction documents.',
+    description: 'Metric survey and construction area unit.',
   },
   SQYD: {
     id: 'SQYD',
     name: 'Square yards',
-    shortName: 'sq yd',
+    shortName: 'yd²',
     sqFtFactor: 9,
     system: UnitSystem.GLOBAL,
     description: '1 square yard = 9 square feet.',
@@ -89,7 +104,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'acres',
     sqFtFactor: 43560,
     system: UnitSystem.GLOBAL,
-    description: 'Large international land unit. 1 acre = 43,560 sq ft.',
+    description: '1 acre = 43,560 square feet.',
   },
   HECTARE: {
     id: 'HECTARE',
@@ -97,7 +112,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     shortName: 'ha',
     sqFtFactor: 107639.104167,
     system: UnitSystem.GLOBAL,
-    description: 'Metric land unit. 1 hectare = 10,000 square metres.',
+    description: '1 hectare = 10,000 square metres.',
   },
 };
 
