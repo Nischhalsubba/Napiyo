@@ -1,0 +1,38 @@
+name: Cloudflare build gate
+
+on:
+  push:
+    branches:
+      - main
+      - 'agent/**'
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-cloudflare-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck, test, and build Cloudflare output
+        run: npm run build:cloudflare
+      - name: Verify Cloudflare Workers assets
+        run: |
+          test -f dist/index.html
+          test -f dist/_headers
+          test -f dist/manifest.webmanifest
+          test -f dist/sw.js
+          test -f wrangler.jsonc
+          test ! -f dist/_redirects
