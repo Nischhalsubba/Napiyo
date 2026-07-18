@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Napiyo land tools">
+  <defs>
+    <linearGradient id="g" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0ea5e9"/>
+      <stop offset="0.55" stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <path d="M116 360 178 144l78 46 78-46 62 216-140 58-140-58Z" fill="none" stroke="#fff" stroke-width="28" stroke-linejoin="round"/>
+  <path d="m178 144 28 230M334 144l-28 230M206 374l100-44" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" opacity=".9"/>
+  <circle cx="256" cy="252" r="35" fill="#fff"/>
+</svg>
