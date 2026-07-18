@@ -23,7 +23,7 @@ describe('smart Nepal land input', () => {
   });
 
   it('parses compact Hill notation', () => {
-    expect(parseSmartArea('1-2-3-4').sqFt).toBe(6502.25);
+    expect(parseSmartArea('1-2-3-4').sqFt).toBe(6502.75);
   });
 
   it('parses compact Terai notation', () => {
