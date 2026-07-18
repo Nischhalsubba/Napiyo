@@ -1,0 +1,50 @@
+html.large-text {
+  font-size: 112.5%;
+}
+
+html.large-text .text-xs {
+  font-size: 0.8125rem;
+}
+
+html.large-text .text-sm {
+  font-size: 0.9375rem;
+}
+
+html.high-contrast {
+  --color-ink-400: #526176;
+  --color-ink-500: #34445c;
+  --color-ink-600: #24354d;
+  --color-paper-200: #b7c9d9;
+  --color-paper-300: #8fa8bd;
+}
+
+html.high-contrast body {
+  background: #ffffff;
+}
+
+html.high-contrast .panel,
+html.high-contrast .surface-card,
+html.high-contrast .metric-card,
+html.high-contrast .field,
+html.high-contrast .select-field {
+  border-color: #60758c;
+  background: #ffffff;
+  backdrop-filter: none;
+}
+
+html.high-contrast .text-ink-400,
+html.high-contrast .text-ink-500,
+html.high-contrast .text-ink-600 {
+  color: #26374f;
+}
+
+html.high-contrast .focus-ring:focus-visible,
+html.high-contrast .field:focus-visible,
+html.high-contrast .select-field:focus-visible {
+  outline: 4px solid #005fcc;
+  outline-offset: 3px;
+}
+
+@media (max-width: 639px) {
+  html.large-text { font-size: 106.25%; }
+}
