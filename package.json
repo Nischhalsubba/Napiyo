@@ -1,7 +1,7 @@
 {
   "name": "napiyo-nepal-land-tools",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "A trustworthy, Nepal-focused land unit converter, plot estimator, visualizer, and saved calculation utility.",
   "author": "Nischhal Raj Subba",
@@ -15,8 +15,9 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run build",
     "build": "npm run check && npm run test && vite build",
+    "build:cloudflare": "npm run check && npm run test && vite build",
+    "verify": "npm run build:cloudflare",
     "preview": "vite preview"
   },
   "dependencies": {
