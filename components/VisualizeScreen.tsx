@@ -1,71 +1,239 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, CarFront, LandPlot, RectangleHorizontal } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { formatDecimal, formatHillsWords, formatTeraiWords, toSqM } from '../utils/conversions';
-import SegmentedControl from './SegmentedControl';
 
-interface VisualizeScreenProps { initialArea: number; onBack: () => void; }
-type PlotRatio = '1' | '1.5' | '2' | '3';
-type SceneMode = 'residential' | 'agriculture' | 'open';
+type Side = 'north' | 'east' | 'south' | 'west';
+type Unit = 'ft' | 'm';
 
-const REFERENCES = [
-  { name: 'standard parking spaces', area: 162, icon: CarFront },
-  { name: 'tennis courts', area: 2808, icon: RectangleHorizontal },
-  { name: 'football fields', area: 57600, icon: LandPlot },
-];
+interface VisualizeScreenProps {
+  initialArea: number;
+  onBack: () => void;
+}
+
+interface PlanProps {
+  frontageFt: number;
+  depthFt: number;
+  roadSide: Side;
+  roadWidthFt: number;
+  northSide: Side;
+  houseWidthFt: number;
+  houseDepthFt: number;
+  frontSetbackFt: number;
+  rearSetbackFt: number;
+  leftSetbackFt: number;
+  rightSetbackFt: number;
+  showHouse: boolean;
+  showDimensions: boolean;
+}
+
+const FT_PER_M = 3.28084;
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const toFeet = (value: number, unit: Unit) => unit === 'm' ? value * FT_PER_M : value;
+const fromFeet = (value: number, unit: Unit) => unit === 'm' ? value / FT_PER_M : value;
 
 const VisualizeScreen = ({ initialArea, onBack }: VisualizeScreenProps) => {
-  const [ratio, setRatio] = useState<PlotRatio>('1.5');
-  const [mode, setMode] = useState<SceneMode>(() => initialArea >= 12000 ? 'agriculture' : 'residential');
-  const numericRatio = Number(ratio);
-  const frontageFt = Math.sqrt(Math.max(initialArea, 0) * numericRatio);
-  const depthFt = Math.sqrt(Math.max(initialArea, 0) / numericRatio);
-  const comparison = useMemo(() => {
-    const reference = initialArea < 1000 ? REFERENCES[0] : initialArea < 12000 ? REFERENCES[1] : REFERENCES[2];
-    return { ...reference, count: initialArea / reference.area };
-  }, [initialArea]);
-  const ComparisonIcon = comparison.icon;
+  const defaultFrontage = Math.sqrt(Math.max(initialArea, 1) * 1.5);
+  const defaultDepth = initialArea / defaultFrontage;
+  const [unit, setUnit] = useState<Unit>('ft');
+  const [frontageFt, setFrontageFt] = useState(defaultFrontage);
+  const [depthFt, setDepthFt] = useState(defaultDepth);
+  const [roadSide, setRoadSide] = useState<Side>('south');
+  const [roadWidthFt, setRoadWidthFt] = useState(20);
+  const [northSide, setNorthSide] = useState<Side>('north');
+  const [houseWidthFt, setHouseWidthFt] = useState(Math.min(30, defaultFrontage * 0.55));
+  const [houseDepthFt, setHouseDepthFt] = useState(Math.min(36, defaultDepth * 0.45));
+  const [frontSetbackFt, setFrontSetbackFt] = useState(10);
+  const [rearSetbackFt, setRearSetbackFt] = useState(8);
+  const [leftSetbackFt, setLeftSetbackFt] = useState(5);
+  const [rightSetbackFt, setRightSetbackFt] = useState(5);
+  const [showHouse, setShowHouse] = useState(true);
+  const [showDimensions, setShowDimensions] = useState(true);
 
-  return <div className="animate-enter mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-    <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={onBack} className="focus-ring inline-flex items-center gap-2 self-start rounded-xl border border-paper-300 bg-white px-4 py-2.5 text-sm font-black text-ink-700 hover:bg-paper-50"><ArrowLeft size={17} />Back to converter</button><p className="max-w-2xl text-sm leading-6 text-ink-500 sm:text-right">Illustrative scale view only. It is not a cadastral map or construction plan.</p></div>
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
-      <section className="surface-card overflow-hidden">
-        <div className="border-b border-paper-200 bg-white p-5 sm:p-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-leaf-700">Realistic scale view</p><h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-ink-950 sm:text-4xl">See the land as a usable plot, not a green box.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">Change the assumed shape and context. Total area stays fixed while frontage, depth, and the visual layout adapt.</p></div><SegmentedControl label="Choose plot proportion" value={ratio} onChange={setRatio} options={[{ label: '1:1', value: '1' }, { label: '3:2', value: '1.5' }, { label: '2:1', value: '2' }, { label: '3:1', value: '3' }]} className="w-full lg:w-auto" /></div><div className="mt-5 inline-flex w-full rounded-2xl bg-paper-100 p-1.5 sm:w-auto"><SceneButton active={mode === 'residential'} label="Residential" onClick={() => setMode('residential')} /><SceneButton active={mode === 'agriculture'} label="Agriculture" onClick={() => setMode('agriculture')} /><SceneButton active={mode === 'open'} label="Open plot" onClick={() => setMode('open')} /></div></div>
-        <div className="bg-[#dfe9df] p-3 sm:p-5"><LandScene ratio={numericRatio} frontageFt={frontageFt} depthFt={depthFt} mode={mode} /></div>
+  const plotArea = frontageFt * depthFt;
+  const areaDelta = plotArea - initialArea;
+  const usableWidth = Math.max(0, frontageFt - leftSetbackFt - rightSetbackFt);
+  const usableDepth = Math.max(0, depthFt - frontSetbackFt - rearSetbackFt);
+  const houseFits = houseWidthFt <= usableWidth && houseDepthFt <= usableDepth;
+
+  const updateFrontage = (displayValue: number) => {
+    const next = Math.max(1, toFeet(displayValue, unit));
+    setFrontageFt(next);
+    setDepthFt(initialArea / next);
+  };
+
+  const updateDepth = (displayValue: number) => {
+    const next = Math.max(1, toFeet(displayValue, unit));
+    setDepthFt(next);
+    setFrontageFt(initialArea / next);
+  };
+
+  const reset = () => {
+    setFrontageFt(defaultFrontage);
+    setDepthFt(defaultDepth);
+    setRoadSide('south');
+    setRoadWidthFt(20);
+    setNorthSide('north');
+    setHouseWidthFt(Math.min(30, defaultFrontage * 0.55));
+    setHouseDepthFt(Math.min(36, defaultDepth * 0.45));
+    setFrontSetbackFt(10);
+    setRearSetbackFt(8);
+    setLeftSetbackFt(5);
+    setRightSetbackFt(5);
+    setShowHouse(true);
+    setShowDimensions(true);
+  };
+
+  const plan = useMemo<PlanProps>(() => ({
+    frontageFt,
+    depthFt,
+    roadSide,
+    roadWidthFt,
+    northSide,
+    houseWidthFt,
+    houseDepthFt,
+    frontSetbackFt,
+    rearSetbackFt,
+    leftSetbackFt,
+    rightSetbackFt,
+    showHouse,
+    showDimensions,
+  }), [frontageFt, depthFt, roadSide, roadWidthFt, northSide, houseWidthFt, houseDepthFt, frontSetbackFt, rearSetbackFt, leftSetbackFt, rightSetbackFt, showHouse, showDimensions]);
+
+  const formatLength = (feet: number) => `${formatDecimal(fromFeet(feet, unit), 1)} ${unit}`;
+
+  return (
+    <div className="animate-enter mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <button type="button" onClick={onBack} className="focus-ring inline-flex items-center gap-2 rounded-xl border border-paper-300 bg-white px-4 py-2.5 text-sm font-black text-ink-700 hover:bg-paper-50"><ArrowLeft size={17} aria-hidden="true" />Back to converter</button>
+        <button type="button" onClick={reset} className="focus-ring inline-flex items-center gap-2 rounded-xl border border-paper-300 bg-white px-4 py-2.5 text-sm font-black text-ink-700 hover:bg-paper-50"><RotateCcw size={17} aria-hidden="true" />Reset plan</button>
+      </div>
+
+      <section className="mb-6 rounded-[2rem] bg-ink-950 px-5 py-7 text-white shadow-soft sm:px-8">
+        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-leaf-300">Custom land planner</p>
+            <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">Shape the plot around real dimensions.</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-200 sm:text-base">Change frontage, depth, road access, compass direction, house footprint, and setbacks. The plan redraws immediately while preserving the converted land area.</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-right">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink-300">Target area</p>
+            <p className="numeral mt-1 text-3xl font-black">{formatDecimal(initialArea)} ft²</p>
+            <p className="text-sm font-bold text-ink-300">{formatDecimal(toSqM(initialArea))} m²</p>
+          </div>
+        </div>
       </section>
-      <aside className="space-y-4">
-        <section className="surface-card overflow-hidden"><div className="bg-ink-950 p-5 text-white sm:p-6"><p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf-300">Selected area</p><p className="numeral mt-2 text-4xl font-black tracking-[-0.04em]">{formatDecimal(initialArea)} <span className="text-base text-ink-300">ft²</span></p><p className="numeral mt-1 text-sm font-bold text-ink-300">{formatDecimal(toSqM(initialArea))} m²</p></div><dl className="grid grid-cols-2 gap-px bg-paper-200"><Stat label="Frontage" value={`${formatDecimal(frontageFt, 1)} ft`} sub={`${formatDecimal(frontageFt / 3.28084, 1)} m`} /><Stat label="Depth" value={`${formatDecimal(depthFt, 1)} ft`} sub={`${formatDecimal(depthFt / 3.28084, 1)} m`} /><Stat label="Perimeter" value={`${formatDecimal((frontageFt + depthFt) * 2, 1)} ft`} sub="approximate" /><Stat label="Shape" value={`${ratio}:1`} sub="editable" /></dl></section>
-        <section className="surface-card p-5 sm:p-6"><p className="text-xs font-bold uppercase tracking-[0.18em] text-saffron-600">Everyday scale</p><div className="mt-4 flex items-center gap-4"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-saffron-100 text-saffron-600"><ComparisonIcon size={24} /></span><div><p className="numeral text-2xl font-black text-ink-950">about {formatDecimal(comparison.count, 1)}</p><p className="text-sm text-ink-500">{comparison.name}</p></div></div></section>
-        <section className="surface-card p-5 sm:p-6"><p className="text-sm font-black text-ink-950">Local unit summary</p><p className="mt-3 text-sm font-bold leading-6 text-ink-700">{formatHillsWords(initialArea)}</p><p className="mt-3 border-t border-paper-200 pt-3 text-sm font-bold leading-6 text-ink-700">{formatTeraiWords(initialArea)}</p></section>
-        <p className="rounded-2xl border border-saffron-200 bg-saffron-50 p-4 text-xs leading-5 text-ink-700">Buildings, crops, trees, parking, road access, and boundary markers are visual references only. Real setbacks, slope, regulations, and title boundaries may differ.</p>
-      </aside>
+
+      <div className="grid gap-6 xl:grid-cols-[23rem_minmax(0,1fr)]">
+        <aside className="space-y-4 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1">
+          <ControlCard title="Plot dimensions" subtitle="Changing one side recalculates the other to preserve total area.">
+            <div className="inline-flex rounded-xl bg-paper-100 p-1"><Toggle active={unit === 'ft'} label="Feet" onClick={() => setUnit('ft')} /><Toggle active={unit === 'm'} label="Metres" onClick={() => setUnit('m')} /></div>
+            <NumberField label="Frontage" value={fromFeet(frontageFt, unit)} suffix={unit} min={1} onChange={updateFrontage} />
+            <NumberField label="Depth" value={fromFeet(depthFt, unit)} suffix={unit} min={1} onChange={updateDepth} />
+          </ControlCard>
+
+          <ControlCard title="Road access" subtitle="Choose which plot boundary touches the road.">
+            <SelectField label="Road side" value={roadSide} options={['north', 'east', 'south', 'west']} onChange={(value) => setRoadSide(value as Side)} />
+            <NumberField label="Road width" value={fromFeet(roadWidthFt, unit)} suffix={unit} min={3} onChange={(value) => setRoadWidthFt(toFeet(value, unit))} />
+          </ControlCard>
+
+          <ControlCard title="Direction" subtitle="Set which edge of the plan points north.">
+            <SelectField label="North points toward" value={northSide} options={['north', 'east', 'south', 'west']} onChange={(value) => setNorthSide(value as Side)} />
+          </ControlCard>
+
+          <ControlCard title="House footprint" subtitle="House size is calculated independently from the land area.">
+            <CheckField label="Show house" checked={showHouse} onChange={setShowHouse} />
+            <NumberField label="House width" value={fromFeet(houseWidthFt, unit)} suffix={unit} min={1} disabled={!showHouse} onChange={(value) => setHouseWidthFt(toFeet(value, unit))} />
+            <NumberField label="House depth" value={fromFeet(houseDepthFt, unit)} suffix={unit} min={1} disabled={!showHouse} onChange={(value) => setHouseDepthFt(toFeet(value, unit))} />
+          </ControlCard>
+
+          <ControlCard title="Setbacks" subtitle="Distances from the house to each plot boundary.">
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField label="Front" value={fromFeet(frontSetbackFt, unit)} suffix={unit} min={0} onChange={(value) => setFrontSetbackFt(toFeet(value, unit))} />
+              <NumberField label="Rear" value={fromFeet(rearSetbackFt, unit)} suffix={unit} min={0} onChange={(value) => setRearSetbackFt(toFeet(value, unit))} />
+              <NumberField label="Left" value={fromFeet(leftSetbackFt, unit)} suffix={unit} min={0} onChange={(value) => setLeftSetbackFt(toFeet(value, unit))} />
+              <NumberField label="Right" value={fromFeet(rightSetbackFt, unit)} suffix={unit} min={0} onChange={(value) => setRightSetbackFt(toFeet(value, unit))} />
+            </div>
+            <CheckField label="Show measurement labels" checked={showDimensions} onChange={setShowDimensions} />
+          </ControlCard>
+        </aside>
+
+        <main className="space-y-4">
+          <section className="surface-card overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-paper-200 bg-white p-5">
+              <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-leaf-700">Live site plan</p><h2 className="mt-1 text-2xl font-black text-ink-950">Editable scale visualization</h2></div>
+              <div className={`rounded-xl px-3 py-2 text-sm font-black ${houseFits ? 'bg-leaf-50 text-leaf-800' : 'bg-red-50 text-red-700'}`}>{houseFits ? 'House fits inside setbacks' : 'House exceeds buildable area'}</div>
+            </div>
+            <div className="bg-[#dfe8dd] p-3 sm:p-5"><SitePlan plan={plan} /></div>
+          </section>
+
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label="Frontage" value={formatLength(frontageFt)} sub="editable" />
+            <Stat label="Depth" value={formatLength(depthFt)} sub="editable" />
+            <Stat label="Road" value={formatLength(roadWidthFt)} sub={`${roadSide} boundary`} />
+            <Stat label="House" value={`${formatLength(houseWidthFt)} × ${formatLength(houseDepthFt)}`} sub={`${formatDecimal(houseWidthFt * houseDepthFt)} ft² footprint`} />
+          </section>
+
+          <section className="grid gap-4 lg:grid-cols-2">
+            <div className="surface-card p-5"><p className="text-sm font-black text-ink-950">Local unit summary</p><p className="mt-3 text-sm font-bold leading-6 text-ink-700">{formatHillsWords(initialArea)}</p><p className="mt-3 border-t border-paper-200 pt-3 text-sm font-bold leading-6 text-ink-700">{formatTeraiWords(initialArea)}</p></div>
+            <div className="surface-card p-5"><p className="text-sm font-black text-ink-950">Plan checks</p><dl className="mt-3 space-y-2 text-sm"><CheckRow label="Current plot area" value={`${formatDecimal(plotArea)} ft²`} /><CheckRow label="Difference from target" value={`${areaDelta >= 0 ? '+' : ''}${formatDecimal(areaDelta)} ft²`} /><CheckRow label="Buildable width" value={formatLength(usableWidth)} /><CheckRow label="Buildable depth" value={formatLength(usableDepth)} /></dl></div>
+          </section>
+
+          <p className="rounded-2xl border border-saffron-200 bg-saffron-50 p-4 text-xs leading-5 text-ink-700">This planner is for visual comparison and early layout exploration. Confirm road boundaries, orientation, setbacks, building rules, and official dimensions with cadastral records and qualified professionals.</p>
+        </main>
+      </div>
     </div>
-  </div>;
+  );
 };
 
-const LandScene = ({ ratio, frontageFt, depthFt, mode }: { ratio: number; frontageFt: number; depthFt: number; mode: SceneMode }) => {
-  const maxW = 640; const maxH = 310; let w = maxW; let h = w / ratio; if (h > maxH) { h = maxH; w = h * ratio; }
-  const x = (900 - w) / 2; const y = 78 + (maxH - h) / 2; const roadY = 470;
-  const houseW = Math.min(w * .42, 230); const houseH = Math.min(h * .42, 130); const houseX = x + w * .16; const houseY = y + h * .2;
-  const cropRowCount = Math.max(5, Math.min(12, Math.floor(h / 24)));
-  const cropRowGap = (h - 36) / Math.max(1, cropRowCount - 1);
-  return <svg viewBox="0 0 900 580" className="block h-auto w-full rounded-[1.5rem] border border-white/60 bg-[#d7e3d5] shadow-[0_24px_70px_rgba(27,54,42,0.18)]" role="img" aria-label="Illustrative land plot with dimensions and road access">
-    <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#eef3ea"/><stop offset="1" stopColor="#cbdcc9"/></linearGradient><linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#83b879"/><stop offset="1" stopColor="#5f9d63"/></linearGradient><linearGradient id="soil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#b78858"/><stop offset="1" stopColor="#8c6848"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#17352a" floodOpacity=".25"/></filter><clipPath id="clip"><rect x={x} y={y} width={w} height={h} rx="8"/></clipPath></defs>
-    <rect width="900" height="580" fill="url(#bg)"/><path d="M0 82C150 34 255 94 390 48S700 20 900 72V0H0Z" fill="#f7faf4" opacity=".8"/><g fill="#7eaa78" opacity=".45"><circle cx="72" cy="88" r="34"/><circle cx="112" cy="64" r="24"/><circle cx="820" cy="90" r="35"/><circle cx="858" cy="64" r="22"/></g>
-    <rect x="0" y={roadY} width="900" height="110" fill="#343b3c"/><rect x="0" y={roadY - 18} width="900" height="18" fill="#c8c5b8"/>{Array.from({ length: 9 }, (_, i) => <rect key={i} x={32 + i * 108} y={roadY + 52} width="58" height="4" rx="2" fill="#f5d66a" opacity=".85"/>)}<text x="450" y="552" textAnchor="middle" fill="#f2f4f4" fontSize="13" fontWeight="700" letterSpacing="1.5">ILLUSTRATIVE ROAD ACCESS</text>
-    <rect x={x} y={y} width={w} height={h} rx="8" fill={mode === 'agriculture' ? 'url(#soil)' : 'url(#grass)'} filter="url(#shadow)"/>
-    <g clipPath="url(#clip)">
-      {mode === 'residential' && <><rect x={houseX + houseW * .58} y={houseY + houseH * .6} width={Math.max(36, houseW * .24)} height={roadY - houseY} fill="#d7d3c8"/><rect x={houseX} y={houseY} width={houseW} height={houseH} rx="6" fill="#f6f0e6"/><path d={`M${houseX - 8} ${houseY + 14}L${houseX + houseW / 2} ${houseY - 28}L${houseX + houseW + 8} ${houseY + 14}Z`} fill="#a94f3d"/><rect x={houseX + houseW * .43} y={houseY + houseH * .52} width={houseW * .16} height={houseH * .48} fill="#7a5944"/><circle cx={x + w * .78} cy={y + h * .3} r="25" fill="#2d6e45"/><circle cx={x + w * .72} cy={y + h * .72} r="21" fill="#3e7d4d"/><rect x={houseX + houseW * .62} y={roadY - 88} width="31" height="54" rx="8" fill="#365b77"/></>}
-      {mode === 'agriculture' && <>{Array.from({ length: cropRowCount }, (_, i) => { const row = y + 18 + i * cropRowGap; return <path key={i} d={`M${x + 18} ${row}C${x + w * .35} ${row - 7} ${x + w * .65} ${row + 7} ${x + w - 18} ${row}`} fill="none" stroke={i % 2 ? '#d7c06f' : '#5d793f'} strokeWidth="6" opacity=".85"/>; })}<rect x={x + w * .08} y={y + h * .1} width={Math.min(92, w * .18)} height={Math.min(62, h * .24)} rx="5" fill="#d6c6a4"/><path d={`M${x + w * .06} ${y + h * .13}L${x + w * .17} ${y + h * .02}L${x + w * .28} ${y + h * .13}Z`} fill="#7f4b35"/></>}
-      {mode === 'open' && <><path d={`M${x + 20} ${y + h * .3}C${x + w * .35} ${y + h * .1} ${x + w * .6} ${y + h * .55} ${x + w - 20} ${y + h * .3}`} fill="none" stroke="#d5e7ca" strokeWidth="4" opacity=".55"/><ellipse cx={x + w * .64} cy={y + h * .48} rx={Math.min(70, w * .15)} ry={Math.min(34, h * .13)} fill="#9d7b56" opacity=".38"/><circle cx={x + w * .2} cy={y + h * .28} r="21" fill="#2d6e45"/><circle cx={x + w * .82} cy={y + h * .7} r="19" fill="#3e7d4d"/></>}
-    </g>
-    <rect x={x} y={y} width={w} height={h} rx="8" fill="none" stroke="#173f2e" strokeWidth="5"/><rect x={x + 7} y={y + 7} width={w - 14} height={h - 14} rx="5" fill="none" stroke="#f4f1df" strokeWidth="2" strokeDasharray="8 7"/>
-    {[[x,y],[x+w,y],[x,y+h],[x+w,y+h]].map(([px,py],i) => <g key={i}><circle cx={px} cy={py} r="8" fill="#f7f2df" stroke="#173f2e" strokeWidth="4"/><circle cx={px} cy={py} r="2.5" fill="#d1692f"/></g>)}
-    <g fill="#17352a" fontFamily="Inter,system-ui" fontWeight="800"><line x1={x} y1={y-28} x2={x+w} y2={y-28} stroke="#17352a" strokeWidth="2"/><rect x={x+w/2-76} y={y-46} width="152" height="28" rx="14" fill="#f8faf6"/><text x={x+w/2} y={y-27} textAnchor="middle" fontSize="13">{formatDecimal(frontageFt,1)} ft · {formatDecimal(frontageFt/3.28084,1)} m</text><line x1={x-28} y1={y} x2={x-28} y2={y+h} stroke="#17352a" strokeWidth="2"/><g transform={`translate(${x-48} ${y+h/2}) rotate(-90)`}><rect x="-76" y="-14" width="152" height="28" rx="14" fill="#f8faf6"/><text x="0" y="5" textAnchor="middle" fontSize="13">{formatDecimal(depthFt,1)} ft · {formatDecimal(depthFt/3.28084,1)} m</text></g></g>
-    <g transform="translate(804 34)"><path d="M18 0L29 34L18 28L7 34Z" fill="#d1692f"/><text x="18" y="50" textAnchor="middle" fill="#17352a" fontSize="12" fontWeight="900">N</text></g>
-  </svg>;
+const SitePlan = ({ plan }: { plan: PlanProps }) => {
+  const canvasW = 960;
+  const canvasH = 680;
+  const pad = 115;
+  const roadPx = clamp(plan.roadWidthFt * 2.2, 40, 105);
+  const horizontalRoad = plan.roadSide === 'north' || plan.roadSide === 'south';
+  const availableW = canvasW - pad * 2 - (horizontalRoad ? 0 : roadPx);
+  const availableH = canvasH - pad * 2 - (horizontalRoad ? roadPx : 0);
+  const scale = Math.min(availableW / plan.frontageFt, availableH / plan.depthFt);
+  const plotW = plan.frontageFt * scale;
+  const plotH = plan.depthFt * scale;
+  const baseX = pad + (plan.roadSide === 'west' ? roadPx : 0) + (availableW - plotW) / 2;
+  const baseY = pad + (plan.roadSide === 'north' ? roadPx : 0) + (availableH - plotH) / 2;
+  const road = plan.roadSide === 'north' ? { x: 0, y: 0, w: canvasW, h: roadPx } : plan.roadSide === 'south' ? { x: 0, y: canvasH - roadPx, w: canvasW, h: roadPx } : plan.roadSide === 'west' ? { x: 0, y: 0, w: roadPx, h: canvasH } : { x: canvasW - roadPx, y: 0, w: roadPx, h: canvasH };
+  const houseX = baseX + plan.leftSetbackFt * scale;
+  const houseY = baseY + plan.frontSetbackFt * scale;
+  const houseW = plan.houseWidthFt * scale;
+  const houseH = plan.houseDepthFt * scale;
+  const buildX = baseX + plan.leftSetbackFt * scale;
+  const buildY = baseY + plan.frontSetbackFt * scale;
+  const buildW = Math.max(0, plotW - (plan.leftSetbackFt + plan.rightSetbackFt) * scale);
+  const buildH = Math.max(0, plotH - (plan.frontSetbackFt + plan.rearSetbackFt) * scale);
+  const northRotation = { north: 0, east: 90, south: 180, west: -90 }[plan.northSide];
+
+  return (
+    <svg viewBox={`0 0 ${canvasW} ${canvasH}`} className="block h-auto w-full rounded-[1.5rem] border border-white/60 bg-[#edf2e9] shadow-[0_24px_70px_rgba(27,54,42,0.16)]" role="img" aria-label="Customizable site plan with road, dimensions, direction, house and setbacks">
+      <defs><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#cbd7c8" strokeWidth="1" /></pattern><filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="10" floodColor="#17352a" floodOpacity=".2" /></filter></defs>
+      <rect width={canvasW} height={canvasH} fill="#edf2e9" /><rect width={canvasW} height={canvasH} fill="url(#grid)" opacity=".55" />
+      <rect x={road.x} y={road.y} width={road.w} height={road.h} fill="#394143" /><RoadMarkings road={road} horizontal={horizontalRoad} />
+      <rect x={baseX} y={baseY} width={plotW} height={plotH} rx="8" fill="#87b878" filter="url(#shadow)" />
+      <rect x={baseX} y={baseY} width={plotW} height={plotH} rx="8" fill="none" stroke="#173f2e" strokeWidth="5" />
+      <rect x={buildX} y={buildY} width={buildW} height={buildH} rx="5" fill="none" stroke="#f8f2dd" strokeWidth="2" strokeDasharray="9 7" />
+      {plan.showHouse && <g><rect x={houseX} y={houseY} width={houseW} height={houseH} rx="5" fill="#f7f1e6" stroke="#6e4d3d" strokeWidth="3" /><path d={`M${houseX - 6} ${houseY + 16}L${houseX + houseW / 2} ${houseY - 18}L${houseX + houseW + 6} ${houseY + 16}Z`} fill="#a6533d" /><rect x={houseX + houseW * .42} y={houseY + houseH * .58} width={houseW * .16} height={houseH * .42} fill="#7d5b47" /></g>}
+      {[[baseX, baseY], [baseX + plotW, baseY], [baseX, baseY + plotH], [baseX + plotW, baseY + plotH]].map(([x, y], index) => <circle key={index} cx={x} cy={y} r="7" fill="#f7f2df" stroke="#173f2e" strokeWidth="4" />)}
+      {plan.showDimensions && <><Dimension x1={baseX} y1={baseY - 30} x2={baseX + plotW} y2={baseY - 30} label={`${formatDecimal(plan.frontageFt, 1)} ft`} /><Dimension x1={baseX - 32} y1={baseY} x2={baseX - 32} y2={baseY + plotH} label={`${formatDecimal(plan.depthFt, 1)} ft`} vertical />{plan.showHouse && <><Dimension x1={houseX} y1={houseY + houseH + 24} x2={houseX + houseW} y2={houseY + houseH + 24} label={`${formatDecimal(plan.houseWidthFt, 1)} ft`} /><Dimension x1={houseX + houseW + 25} y1={houseY} x2={houseX + houseW + 25} y2={houseY + houseH} label={`${formatDecimal(plan.houseDepthFt, 1)} ft`} vertical /></>}</>}
+      <g transform={`translate(885 72) rotate(${northRotation})`}><path d="M0 -34L13 10L0 3L-13 10Z" fill="#d1692f" /><text x="0" y="30" textAnchor="middle" fill="#17352a" fontSize="14" fontWeight="900">N</text></g>
+      <text x={road.x + road.w / 2} y={road.y + road.h / 2 + 5} textAnchor="middle" fill="#fff" fontSize="14" fontWeight="800" transform={!horizontalRoad ? `rotate(-90 ${road.x + road.w / 2} ${road.y + road.h / 2})` : undefined}>ROAD · {formatDecimal(plan.roadWidthFt, 1)} FT</text>
+    </svg>
+  );
 };
 
-const SceneButton = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => <button type="button" onClick={onClick} aria-pressed={active} className={`focus-ring flex-1 rounded-xl px-4 py-2.5 text-sm font-black transition ${active ? 'bg-white text-ink-950 shadow-card' : 'text-ink-500 hover:bg-white/70'}`}>{label}</button>;
-const Stat = ({ label, value, sub }: { label: string; value: string; sub: string }) => <div className="bg-white p-4"><dt className="text-xs font-bold uppercase tracking-[0.12em] text-ink-400">{label}</dt><dd className="numeral mt-2 text-xl font-black text-ink-950">{value}</dd><dd className="mt-1 text-xs font-bold text-ink-400">{sub}</dd></div>;
+const RoadMarkings = ({ road, horizontal }: { road: { x: number; y: number; w: number; h: number }; horizontal: boolean }) => horizontal ? <g>{Array.from({ length: 8 }, (_, index) => <rect key={index} x={40 + index * 120} y={road.y + road.h / 2 - 2} width="65" height="4" rx="2" fill="#f2d569" />)}</g> : <g>{Array.from({ length: 6 }, (_, index) => <rect key={index} x={road.x + road.w / 2 - 2} y={40 + index * 105} width="4" height="58" rx="2" fill="#f2d569" />)}</g>;
+const Dimension = ({ x1, y1, x2, y2, label, vertical = false }: { x1: number; y1: number; x2: number; y2: number; label: string; vertical?: boolean }) => <g stroke="#17352a" fill="#17352a" fontFamily="Inter,system-ui" fontWeight="800"><line x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2" /><line x1={x1} y1={y1 - 6} x2={x1} y2={y1 + 6} /><line x1={x2} y1={y2 - 6} x2={x2} y2={y2 + 6} /><text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 8} textAnchor="middle" fontSize="12" transform={vertical ? `rotate(-90 ${(x1 + x2) / 2} ${(y1 + y2) / 2})` : undefined}>{label}</text></g>;
+const ControlCard = ({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) => <section className="surface-card p-5"><h2 className="text-lg font-black text-ink-950">{title}</h2><p className="mt-1 text-xs leading-5 text-ink-500">{subtitle}</p><div className="mt-4 space-y-4">{children}</div></section>;
+const NumberField = ({ label, value, suffix, min, onChange, disabled = false }: { label: string; value: number; suffix: string; min: number; onChange: (value: number) => void; disabled?: boolean }) => <label className="block"><span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.1em] text-ink-500">{label}</span><div className="relative"><input type="number" value={Number(value.toFixed(2))} min={min} step="0.1" disabled={disabled} onChange={(event) => onChange(Number(event.target.value) || 0)} className="focus-ring numeral w-full rounded-xl border border-paper-300 bg-white px-3 py-3 pr-12 font-black text-ink-950 disabled:opacity-45" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-ink-400">{suffix}</span></div></label>;
+const SelectField = ({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) => <label className="block"><span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.1em] text-ink-500">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="focus-ring w-full rounded-xl border border-paper-300 bg-white px-3 py-3 font-black capitalize text-ink-950">{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+const CheckField = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) => <label className="flex items-center justify-between gap-3 rounded-xl bg-paper-100 px-3 py-3 text-sm font-black text-ink-700"><span>{label}</span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-5 w-5 accent-[#1c613d]" /></label>;
+const Toggle = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => <button type="button" onClick={onClick} className={`rounded-lg px-4 py-2 text-sm font-black ${active ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500'}`}>{label}</button>;
+const Stat = ({ label, value, sub }: { label: string; value: string; sub: string }) => <div className="surface-card p-4"><p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-400">{label}</p><p className="numeral mt-2 text-xl font-black text-ink-950">{value}</p><p className="mt-1 text-xs font-bold text-ink-400">{sub}</p></div>;
+const CheckRow = ({ label, value }: { label: string; value: string }) => <div className="flex items-center justify-between gap-4"><dt className="font-bold text-ink-500">{label}</dt><dd className="numeral text-right font-black text-ink-950">{value}</dd></div>;
 
 export default VisualizeScreen;
