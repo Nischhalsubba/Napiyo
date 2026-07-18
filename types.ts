@@ -13,6 +13,8 @@ export interface UnitDefinition {
   description: string;
 }
 
+export interface Point { x: number; y: number; }
+
 export interface SavedItem {
   id: string;
   title: string;
@@ -21,16 +23,19 @@ export interface SavedItem {
   date: number;
   type: 'CONVERTED' | 'MEASURED';
   tags: string[];
+  notes?: string;
   source?: {
     inputValue?: string;
     inputUnit?: string;
     referenceDistanceFt?: number;
+    referenceUnit?: 'ft' | 'm';
+    perimeterFt?: number;
+    scalePoints?: Point[];
+    boundary?: Point[];
+    imageWidth?: number;
+    imageHeight?: number;
+    confidence?: 'LOW' | 'MEDIUM' | 'HIGH';
   };
-}
-
-export interface Point {
-  x: number;
-  y: number;
 }
 
 export type ViewState = 'convert' | 'measure' | 'saved' | 'visualize';
