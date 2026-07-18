@@ -94,7 +94,7 @@ const App = () => {
       {activeView === 'measure' && <MeasureScreen onSave={handleSave} notify={setToast}/>} 
       {activeView === 'gps' && <GpsMeasureScreen onSave={handleSave} notify={setToast}/>} 
       {activeView === 'saved' && <SavedScreen items={savedItems} onDelete={(id) => setPendingDelete(savedItems.find((item) => item.id === id) ?? null)} onVisualize={visualize} onImport={handleImport} notify={setToast}/>} 
-      {activeView === 'visualize' && <VisualizeScreen initialArea={visualizedArea} onBack={() => navigate('convert')}/>} 
+      {activeView === 'visualize' && <VisualizeScreen initialArea={visualizedArea} onBack={() => navigate('convert')} onSave={handleSave} notify={setToast}/>} 
       {activeView === 'learn' && <LearnScreen/>}
     </main>
     <footer className="app-footer hidden border-t border-paper-200/80 bg-white/78 backdrop-blur-xl md:block"><div className="mx-auto flex max-w-[96rem] items-center justify-between gap-6 px-6 py-3 lg:px-8"><div className="flex min-w-0 items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-leaf-100 text-leaf-700"><ShieldCheck size={17}/></span><p className="truncate text-xs text-ink-500"><strong className="font-semibold text-ink-800">Planning aid, not a survey record.</strong> Confirm official area and boundaries with cadastral records.</p></div><button type="button" onClick={() => navigate('learn')} className="button-quiet focus-ring shrink-0 !min-h-9 !px-3 !py-1.5"><BookOpen size={15}/>Learn</button></div></footer>
