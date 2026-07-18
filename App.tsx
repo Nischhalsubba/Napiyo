@@ -4,6 +4,7 @@ import {
   Calculator,
   CheckCircle2,
   Code2,
+  LandPlot,
   MapPinned,
   Menu,
   ShieldCheck,
@@ -16,10 +17,10 @@ import VisualizeScreen from './components/VisualizeScreen';
 import { loadItems, saveItems } from './lib/storage';
 import { SavedItem, ViewState } from './types';
 
-const NAV_ITEMS: { id: Exclude<ViewState, 'visualize'>; label: string; shortLabel: string; icon: typeof Calculator }[] = [
-  { id: 'convert', label: 'Convert area', shortLabel: 'Convert', icon: Calculator },
-  { id: 'measure', label: 'Estimate a plot', shortLabel: 'Measure', icon: MapPinned },
-  { id: 'saved', label: 'Saved areas', shortLabel: 'Saved', icon: Bookmark },
+const NAV_ITEMS: { id: Exclude<ViewState, 'visualize'>; label: string; mobileLabel: string; icon: typeof Calculator }[] = [
+  { id: 'convert', label: 'Convert', mobileLabel: 'Convert', icon: Calculator },
+  { id: 'measure', label: 'Measure', mobileLabel: 'Measure', icon: MapPinned },
+  { id: 'saved', label: 'Saved', mobileLabel: 'Saved', icon: Bookmark },
 ];
 
 const getInitialView = (): ViewState => {
@@ -66,7 +67,7 @@ const App = () => {
     const nextItems = savedItems.filter((item) => item.id !== pendingDelete.id);
     if (saveItems(nextItems)) {
       setSavedItems(nextItems);
-      setToast('Saved area deleted.');
+      setToast('Removed from saved areas.');
     } else {
       setToast('This browser could not update saved areas.');
     }
@@ -80,17 +81,19 @@ const App = () => {
 
   return (
     <div className="min-h-screen pb-24 text-ink-950 md:pb-0">
-      <header className="sticky top-0 z-40 border-b border-paper-300/80 bg-paper-100/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-paper-200 bg-paper-50/92 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-[86rem] items-center justify-between px-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => navigate('convert')} className="focus-ring flex items-center gap-3 rounded-xl text-left">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-950 text-lg font-bold text-white shadow-card">N</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink-950 text-white">
+              <LandPlot size={19} aria-hidden="true" />
+            </span>
             <span>
-              <span className="block text-lg font-bold leading-5 text-ink-950">Napiyo</span>
-              <span className="hidden text-xs font-semibold text-ink-500 sm:block">Land area tools for Nepal</span>
+              <span className="block text-base font-bold tracking-[-0.02em] text-ink-950">Napiyo</span>
+              <span className="hidden text-xs font-medium text-ink-500 sm:block">Land measurements, made readable</span>
             </span>
           </button>
 
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+          <nav className="hidden items-center rounded-xl border border-paper-200 bg-paper-100 p-1 md:flex" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => (
               <NavButton key={item.id} item={item} active={activeView === item.id} onClick={() => navigate(item.id)} />
             ))}
@@ -101,27 +104,27 @@ const App = () => {
               href="https://github.com/Nischhalsubba/Napiyo"
               target="_blank"
               rel="noreferrer"
-              className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-xl text-ink-600 hover:bg-white hover:text-ink-950"
-              aria-label="Open Napiyo on GitHub"
+              className="icon-button focus-ring"
+              aria-label="View Napiyo source code"
             >
-              <Code2 aria-hidden="true" size={19} />
+              <Code2 aria-hidden="true" size={18} />
             </a>
           </div>
 
           <button
             type="button"
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl text-ink-700 hover:bg-white md:hidden"
+            className="icon-button focus-ring md:hidden"
             aria-expanded={mobileMenuOpen}
-            aria-label="Toggle navigation menu"
+            aria-label="Open navigation"
           >
-            {mobileMenuOpen ? <X aria-hidden="true" size={22} /> : <Menu aria-hidden="true" size={22} />}
+            {mobileMenuOpen ? <X aria-hidden="true" size={20} /> : <Menu aria-hidden="true" size={20} />}
           </button>
         </div>
 
         {mobileMenuOpen && (
-          <nav className="border-t border-paper-300 bg-paper-50 px-4 py-3 md:hidden" aria-label="Mobile navigation">
-            <div className="mx-auto grid max-w-7xl gap-2">
+          <nav className="border-t border-paper-200 bg-paper-50 px-4 py-3 md:hidden" aria-label="Mobile navigation">
+            <div className="mx-auto grid max-w-[86rem] gap-1">
               {NAV_ITEMS.map((item) => (
                 <NavButton key={item.id} item={item} active={activeView === item.id} onClick={() => navigate(item.id)} mobile />
               ))}
@@ -144,30 +147,25 @@ const App = () => {
         {activeView === 'visualize' && <VisualizeScreen initialArea={visualizedArea} onBack={() => navigate('convert')} />}
       </main>
 
-      <footer className="border-t border-paper-300 bg-paper-50/70">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 md:grid-cols-[1fr_auto] md:items-center lg:px-8">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-bold text-ink-950">
-              <ShieldCheck aria-hidden="true" size={18} className="text-leaf-700" />
-              Estimate responsibly
+      <footer className="border-t border-paper-200 bg-paper-50">
+        <div className="mx-auto flex max-w-[86rem] flex-col gap-4 px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-leaf-50 text-leaf-700">
+              <ShieldCheck aria-hidden="true" size={17} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-ink-800">Planning aid, not a survey record</p>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-ink-500">Confirm official area, boundaries, access, and ownership with cadastral records and a qualified survey professional.</p>
             </div>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-600">
-              Napiyo helps with conversion, comparison, and early understanding. Verify legal land area and boundaries with official records and a licensed survey professional.
-            </p>
           </div>
-          <a
-            href="https://github.com/Nischhalsubba/Napiyo"
-            target="_blank"
-            rel="noreferrer"
-            className="focus-ring inline-flex items-center gap-2 text-sm font-bold text-ink-600 hover:text-ink-950"
-          >
-            <Code2 aria-hidden="true" size={17} />
-            View source
+          <a href="https://github.com/Nischhalsubba/Napiyo" target="_blank" rel="noreferrer" className="button-quiet focus-ring self-start">
+            <Code2 aria-hidden="true" size={16} />
+            Source code
           </a>
         </div>
       </footer>
 
-      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-paper-300 bg-paper-50/95 px-2 pt-2 backdrop-blur-xl md:hidden" aria-label="Bottom navigation">
+      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-paper-200 bg-paper-50/96 px-2 pt-2 backdrop-blur-xl md:hidden" aria-label="Bottom navigation">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = activeView === item.id;
@@ -177,49 +175,33 @@ const App = () => {
               type="button"
               onClick={() => navigate(item.id)}
               aria-current={active ? 'page' : undefined}
-              className={`focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-bold transition ${
-                active ? 'bg-leaf-100 text-leaf-800' : 'text-ink-500 hover:bg-paper-100 hover:text-ink-950'
+              className={`focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-semibold transition ${
+                active ? 'bg-ink-950 text-white' : 'text-ink-500 hover:bg-paper-100 hover:text-ink-950'
               }`}
             >
-              <Icon aria-hidden="true" size={20} />
-              {item.shortLabel}
+              <Icon aria-hidden="true" size={19} />
+              {item.mobileLabel}
             </button>
           );
         })}
       </nav>
 
       {toast && (
-        <div className="pointer-events-none fixed inset-x-4 bottom-24 z-[60] mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink-950 px-4 py-3 text-sm font-semibold text-white shadow-soft md:bottom-6" role="status" aria-live="polite">
-          <CheckCircle2 aria-hidden="true" className="shrink-0 text-leaf-300" size={19} />
+        <div className="pointer-events-none fixed inset-x-4 bottom-24 z-[60] mx-auto flex max-w-sm items-center gap-3 rounded-xl bg-ink-950 px-4 py-3 text-sm font-semibold text-white shadow-soft md:bottom-6" role="status" aria-live="polite">
+          <CheckCircle2 aria-hidden="true" className="shrink-0 text-leaf-300" size={18} />
           {toast}
         </div>
       )}
 
       {pendingDelete && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="presentation">
-          <section className="w-full max-w-md rounded-t-3xl bg-paper-50 p-6 shadow-soft sm:rounded-3xl" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-700">
-              <Bookmark aria-hidden="true" size={22} />
-            </span>
-            <h2 id="delete-title" className="mt-5 text-2xl font-bold text-ink-950">Delete this saved area?</h2>
-            <p className="mt-2 text-sm leading-6 text-ink-600">
-              “{pendingDelete.title}” will be removed from this browser. This cannot be undone.
-            </p>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="presentation">
+          <section className="w-full max-w-md rounded-t-2xl bg-paper-50 p-6 shadow-soft sm:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+            <p className="eyebrow text-red-700">Remove saved area</p>
+            <h2 id="delete-title" className="mt-2 text-2xl font-bold tracking-[-0.025em] text-ink-950">Delete “{pendingDelete.title}”?</h2>
+            <p className="mt-3 text-sm leading-6 text-ink-600">This removes the item from this browser. It cannot be restored.</p>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                className="focus-ring min-h-12 rounded-xl border border-paper-300 bg-white px-4 font-bold text-ink-700 hover:bg-paper-50"
-              >
-                Keep it
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="focus-ring min-h-12 rounded-xl bg-red-700 px-4 font-bold text-white hover:bg-red-800"
-              >
-                Delete saved area
-              </button>
+              <button type="button" onClick={() => setPendingDelete(null)} className="button-secondary focus-ring">Cancel</button>
+              <button type="button" onClick={confirmDelete} className="button-primary focus-ring !border-red-700 !bg-red-700 hover:!bg-red-800">Delete area</button>
             </div>
           </section>
         </div>
@@ -242,11 +224,11 @@ const NavButton = ({ item, active, onClick, mobile = false }: NavButtonProps) =>
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`focus-ring inline-flex items-center gap-2 rounded-xl font-bold transition ${
-        mobile ? 'w-full px-4 py-3 text-left' : 'px-4 py-2.5 text-sm'
-      } ${active ? 'bg-ink-950 text-white' : 'text-ink-600 hover:bg-white hover:text-ink-950'}`}
+      className={`focus-ring inline-flex items-center gap-2 rounded-lg text-sm font-semibold transition ${
+        mobile ? 'w-full px-3 py-3 text-left' : 'px-3.5 py-2'
+      } ${active ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500 hover:bg-white/70 hover:text-ink-900'}`}
     >
-      <Icon aria-hidden="true" size={18} />
+      <Icon aria-hidden="true" size={17} />
       {item.label}
     </button>
   );
