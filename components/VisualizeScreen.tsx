@@ -1,240 +1,112 @@
-import { useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
-import { ArrowLeft, Lock, RotateCcw, Unlock } from 'lucide-react';
-import { formatDecimal, formatHillsWords, formatTeraiWords, toSqM } from '../utils/conversions';
+import { useMemo, useRef, useState, type PointerEvent } from 'react';
+import { ArrowLeft, Download, Plus, Redo2, RotateCcw, Save, Trash2, Undo2 } from 'lucide-react';
+import { CardinalSide, PlanBuilding, PlannerProject, Point, SavedItem } from '../types';
+import { calculatePolygonAreaPx, formatDecimal, formatHillsWords, formatTeraiWords, toSqM } from '../utils/conversions';
 
-type Side = 'north' | 'east' | 'south' | 'west';
-type Unit = 'ft' | 'm';
-
-interface VisualizeScreenProps {
+interface Props {
   initialArea: number;
   onBack: () => void;
+  onSave?: (item: SavedItem) => boolean;
+  notify?: (message: string) => void;
 }
 
-interface Plan {
-  frontage: number;
-  depth: number;
-  roadSide: Side;
-  roadWidth: number;
-  northSide: Side;
-  houseWidth: number;
-  houseDepth: number;
-  houseX: number;
-  houseY: number;
-  rotateHouse: boolean;
-  showHouse: boolean;
-  showDimensions: boolean;
-  showGrid: boolean;
-}
-
+type Unit = 'ft' | 'm';
+type Snapshot = { frontage: number; depth: number; insets: number[]; roadSide: CardinalSide; roadWidth: number; northSide: CardinalSide; buildings: PlanBuilding[] };
 const FT_PER_M = 3.28084;
-const SIDES: Side[] = ['north', 'east', 'south', 'west'];
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const SIDES: CardinalSide[] = ['north', 'east', 'south', 'west'];
 const toFeet = (value: number, unit: Unit) => unit === 'm' ? value * FT_PER_M : value;
 const fromFeet = (value: number, unit: Unit) => unit === 'm' ? value / FT_PER_M : value;
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const id = () => crypto.randomUUID();
 
-const VisualizeScreen = ({ initialArea, onBack }: VisualizeScreenProps) => {
+const VisualizeScreen = ({ initialArea, onBack, onSave, notify }: Props) => {
   const defaultFrontage = Math.sqrt(Math.max(initialArea, 1) * 1.5);
   const defaultDepth = initialArea / defaultFrontage;
   const [unit, setUnit] = useState<Unit>('ft');
-  const [lockArea, setLockArea] = useState(true);
   const [frontage, setFrontage] = useState(defaultFrontage);
   const [depth, setDepth] = useState(defaultDepth);
-  const [roadSide, setRoadSide] = useState<Side>('south');
+  const [insets, setInsets] = useState([0, 0, 0, 0]);
+  const [roadSide, setRoadSide] = useState<CardinalSide>('south');
   const [roadWidth, setRoadWidth] = useState(20);
-  const [northSide, setNorthSide] = useState<Side>('north');
-  const [showHouse, setShowHouse] = useState(true);
-  const [houseWidth, setHouseWidth] = useState(Math.min(30, defaultFrontage * 0.5));
-  const [houseDepth, setHouseDepth] = useState(Math.min(36, defaultDepth * 0.45));
-  const [houseX, setHouseX] = useState(5);
-  const [houseY, setHouseY] = useState(8);
-  const [rotateHouse, setRotateHouse] = useState(false);
+  const [northSide, setNorthSide] = useState<CardinalSide>('north');
+  const [buildings, setBuildings] = useState<PlanBuilding[]>([{ id: id(), name: 'House', width: Math.min(30, defaultFrontage * .5), depth: Math.min(36, defaultDepth * .45), x: 5, y: 8, rotation: 0 }]);
+  const [selectedId, setSelectedId] = useState<string | null>(buildings[0].id);
   const [showDimensions, setShowDimensions] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
+  const [past, setPast] = useState<Snapshot[]>([]);
+  const [future, setFuture] = useState<Snapshot[]>([]);
+  const dragRef = useRef<{ id: string; startX: number; startY: number; originX: number; originY: number } | null>(null);
 
-  const renderedHouseWidth = rotateHouse ? houseDepth : houseWidth;
-  const renderedHouseDepth = rotateHouse ? houseWidth : houseDepth;
-  const eastGap = frontage - houseX - renderedHouseWidth;
-  const southGap = depth - houseY - renderedHouseDepth;
-  const plotArea = frontage * depth;
-  const houseFits = !showHouse || (houseX >= 0 && houseY >= 0 && eastGap >= 0 && southGap >= 0);
+  const snapshot = (): Snapshot => ({ frontage, depth, insets: [...insets], roadSide, roadWidth, northSide, buildings: buildings.map((building) => ({ ...building })) });
+  const restore = (state: Snapshot) => { setFrontage(state.frontage); setDepth(state.depth); setInsets(state.insets); setRoadSide(state.roadSide); setRoadWidth(state.roadWidth); setNorthSide(state.northSide); setBuildings(state.buildings); setSelectedId(state.buildings[0]?.id ?? null); };
+  const checkpoint = () => { setPast((items) => [...items.slice(-29), snapshot()]); setFuture([]); };
+  const undo = () => { const state = past.at(-1); if (!state) return; setFuture((items) => [snapshot(), ...items]); setPast((items) => items.slice(0, -1)); restore(state); };
+  const redo = () => { const state = future[0]; if (!state) return; setPast((items) => [...items, snapshot()]); setFuture((items) => items.slice(1)); restore(state); };
 
-  const updateFrontage = (displayValue: number) => {
-    const next = Math.max(1, toFeet(displayValue, unit));
-    setFrontage(next);
-    if (lockArea) setDepth(initialArea / next);
+  const plotPoints = useMemo<Point[]>(() => [
+    { x: clamp(insets[0], 0, frontage * .45), y: 0 },
+    { x: frontage - clamp(insets[1], 0, frontage * .45), y: 0 },
+    { x: frontage - clamp(insets[2], 0, frontage * .45), y: depth },
+    { x: clamp(insets[3], 0, frontage * .45), y: depth },
+  ], [depth, frontage, insets]);
+  const plotArea = calculatePolygonAreaPx(plotPoints);
+  const selected = buildings.find((building) => building.id === selectedId) ?? null;
+
+  const updateBuilding = (buildingId: string, patch: Partial<PlanBuilding>, record = true) => {
+    if (record) checkpoint();
+    setBuildings((items) => items.map((building) => building.id === buildingId ? { ...building, ...patch } : building));
+  };
+  const addBuilding = () => {
+    checkpoint();
+    const next = { id: id(), name: `Building ${buildings.length + 1}`, width: Math.min(20, frontage * .35), depth: Math.min(24, depth * .35), x: 3 + buildings.length * 2, y: 3 + buildings.length * 2, rotation: 0 as const };
+    setBuildings((items) => [...items, next]);
+    setSelectedId(next.id);
+  };
+  const removeBuilding = (buildingId: string) => { checkpoint(); setBuildings((items) => items.filter((item) => item.id !== buildingId)); setSelectedId(null); };
+  const reset = () => { checkpoint(); setFrontage(defaultFrontage); setDepth(defaultDepth); setInsets([0,0,0,0]); setRoadSide('south'); setRoadWidth(20); setNorthSide('north'); setBuildings([{ id:id(), name:'House', width:Math.min(30,defaultFrontage*.5), depth:Math.min(36,defaultDepth*.45), x:5, y:8, rotation:0 }]); };
+
+  const plan: PlannerProject = { frontage, depth, plotPoints, roadSide, roadWidth, northSide, buildings, showDimensions, showGrid };
+  const save = () => {
+    if (!onSave) return;
+    const ok = onSave({ id:id(), title:`Site plan · ${new Date().toLocaleDateString()}`, sqFt:plotArea, sqM:toSqM(plotArea), date:Date.now(), type:'PLANNED', tags:['planner', buildings.length > 1 ? 'multiple-buildings' : 'single-building'], source:{ planner:plan } });
+    notify?.(ok ? 'Site plan saved on this device.' : 'The site plan could not be saved.');
+  };
+  const exportSvg = () => {
+    const source = document.getElementById('napiyo-site-plan');
+    if (!source) return;
+    const content = new XMLSerializer().serializeToString(source);
+    const url = URL.createObjectURL(new Blob([content], { type:'image/svg+xml' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'napiyo-site-plan.svg'; link.click(); URL.revokeObjectURL(url);
   };
 
-  const updateDepth = (displayValue: number) => {
-    const next = Math.max(1, toFeet(displayValue, unit));
-    setDepth(next);
-    if (lockArea) setFrontage(initialArea / next);
-  };
+  return <div className="page-shell animate-enter !max-w-[100rem]">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><button type="button" onClick={onBack} className="button-secondary focus-ring"><ArrowLeft size={16}/>Back</button><div className="flex flex-wrap gap-2"><button type="button" onClick={undo} disabled={!past.length} className="button-quiet focus-ring"><Undo2 size={16}/>Undo</button><button type="button" onClick={redo} disabled={!future.length} className="button-quiet focus-ring"><Redo2 size={16}/>Redo</button><button type="button" onClick={reset} className="button-quiet focus-ring"><RotateCcw size={16}/>Reset</button><button type="button" onClick={exportSvg} className="button-secondary focus-ring"><Download size={16}/>SVG</button>{onSave && <button type="button" onClick={save} className="button-primary focus-ring"><Save size={16}/>Save plan</button>}</div></div>
+    <header className="grid gap-5 border-b border-paper-200 pb-7 lg:grid-cols-[1fr_auto] lg:items-end"><div className="page-header !mb-0 max-w-4xl"><p className="eyebrow">Editable site planner</p><h1 className="page-title">Shape the plot and arrange multiple buildings.</h1><p className="page-copy">Adjust irregular corner insets, roads, direction, and building footprints. Drag buildings directly on the drawing and use undo or redo without negotiating with regret.</p></div><div className="rounded-2xl border border-paper-200 bg-white px-5 py-4 shadow-card"><p className="metric-label">Current plot area</p><p className="numeral mt-1 text-2xl font-semibold text-ink-950">{formatDecimal(plotArea)} ft²</p><p className="mt-1 text-xs text-ink-500">Target {formatDecimal(initialArea)} ft² · difference {formatDecimal(plotArea - initialArea)} ft²</p></div></header>
 
-  const applyRatio = (ratio: number) => {
-    const nextFrontage = Math.sqrt(Math.max(initialArea, 1) * ratio);
-    const nextDepth = initialArea / nextFrontage;
-    setFrontage(nextFrontage);
-    setDepth(nextDepth);
-    setLockArea(true);
-    setHouseX(Math.max(0, (nextFrontage - renderedHouseWidth) / 2));
-    setHouseY(Math.max(0, (nextDepth - renderedHouseDepth) / 2));
-  };
+    <div className="mt-6 grid gap-5 xl:grid-cols-[24rem_minmax(0,1fr)]">
+      <aside className="space-y-4 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-1 scrollbar-thin">
+        <Control title="Plot geometry"><div className="grid grid-cols-2 gap-1 rounded-xl bg-paper-100 p-1"><Toggle active={unit==='ft'} label="Feet" onClick={() => setUnit('ft')}/><Toggle active={unit==='m'} label="Metres" onClick={() => setUnit('m')}/></div><div className="grid grid-cols-2 gap-3"><NumberField label="Frontage" value={fromFeet(frontage,unit)} suffix={unit} onChange={(value) => { checkpoint(); setFrontage(Math.max(5,toFeet(value,unit))); }}/><NumberField label="Depth" value={fromFeet(depth,unit)} suffix={unit} onChange={(value) => { checkpoint(); setDepth(Math.max(5,toFeet(value,unit))); }}/></div><p className="field-label">Corner insets</p><div className="grid grid-cols-2 gap-3">{['NW','NE','SE','SW'].map((label,index) => <NumberField key={label} label={label} value={fromFeet(insets[index],unit)} suffix={unit} min={0} onChange={(value) => { checkpoint(); setInsets((items) => items.map((item,i) => i===index ? toFeet(value,unit) : item)); }}/>)}</div></Control>
+        <Control title="Road and north"><DirectionPicker label="Road side" value={roadSide} onChange={(value) => { checkpoint(); setRoadSide(value); }}/><NumberField label="Road width" value={fromFeet(roadWidth,unit)} suffix={unit} min={3} onChange={(value) => { checkpoint(); setRoadWidth(toFeet(value,unit)); }}/><DirectionPicker label="North edge" value={northSide} onChange={(value) => { checkpoint(); setNorthSide(value); }}/></Control>
+        <Control title="Buildings"><button type="button" onClick={addBuilding} className="button-secondary focus-ring w-full"><Plus size={16}/>Add building</button><div className="space-y-2">{buildings.map((building) => <button key={building.id} type="button" onClick={() => setSelectedId(building.id)} className={`focus-ring flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left text-sm font-semibold ${selectedId===building.id?'border-leaf-400 bg-leaf-50 text-leaf-900':'border-paper-300 bg-white text-ink-700'}`}><span>{building.name}</span><span className="text-xs text-ink-400">{formatDecimal(building.width)} × {formatDecimal(building.depth)} ft</span></button>)}</div>{selected && <div className="space-y-3 border-t border-paper-200 pt-4"><label className="block"><span className="field-label">Name</span><input value={selected.name} onChange={(event) => updateBuilding(selected.id,{name:event.target.value},false)} onBlur={checkpoint} className="field"/></label><div className="grid grid-cols-2 gap-3"><NumberField label="Width" value={fromFeet(selected.width,unit)} suffix={unit} onChange={(value) => updateBuilding(selected.id,{width:toFeet(value,unit)})}/><NumberField label="Depth" value={fromFeet(selected.depth,unit)} suffix={unit} onChange={(value) => updateBuilding(selected.id,{depth:toFeet(value,unit)})}/><NumberField label="From west" value={fromFeet(selected.x,unit)} suffix={unit} min={0} onChange={(value) => updateBuilding(selected.id,{x:toFeet(value,unit)})}/><NumberField label="From north" value={fromFeet(selected.y,unit)} suffix={unit} min={0} onChange={(value) => updateBuilding(selected.id,{y:toFeet(value,unit)})}/></div><div className="grid grid-cols-2 gap-2"><Toggle active={selected.rotation===0} label="0°" onClick={() => updateBuilding(selected.id,{rotation:0})}/><Toggle active={selected.rotation===90} label="90°" onClick={() => updateBuilding(selected.id,{rotation:90})}/></div><button type="button" onClick={() => removeBuilding(selected.id)} className="button-secondary focus-ring w-full text-red-700"><Trash2 size={16}/>Remove building</button></div>}</Control>
+        <Control title="Layers"><CheckField label="Show dimensions" checked={showDimensions} onChange={setShowDimensions}/><CheckField label="Show grid" checked={showGrid} onChange={setShowGrid}/></Control>
+      </aside>
 
-  const reset = () => {
-    setUnit('ft'); setLockArea(true); setFrontage(defaultFrontage); setDepth(defaultDepth);
-    setRoadSide('south'); setRoadWidth(20); setNorthSide('north'); setShowHouse(true);
-    setHouseWidth(Math.min(30, defaultFrontage * 0.5)); setHouseDepth(Math.min(36, defaultDepth * 0.45));
-    setHouseX(5); setHouseY(8); setRotateHouse(false); setShowDimensions(true); setShowGrid(true);
-  };
-
-  const plan = useMemo<Plan>(() => ({
-    frontage, depth, roadSide, roadWidth, northSide, houseWidth, houseDepth,
-    houseX, houseY, rotateHouse, showHouse, showDimensions, showGrid,
-  }), [frontage, depth, roadSide, roadWidth, northSide, houseWidth, houseDepth, houseX, houseY, rotateHouse, showHouse, showDimensions, showGrid]);
-
-  const display = (feet: number) => `${formatDecimal(fromFeet(feet, unit), 1)} ${unit}`;
-
-  return (
-    <div className="page-shell animate-enter !max-w-[100rem]">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <button type="button" onClick={onBack} className="button-secondary focus-ring"><ArrowLeft size={16} />Back to converter</button>
-        <button type="button" onClick={reset} className="button-quiet focus-ring"><RotateCcw size={16} />Reset plan</button>
-      </div>
-
-      <header className="grid gap-5 border-b border-paper-200 pb-7 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div className="page-header !mb-0 max-w-4xl">
-          <p className="eyebrow">Measured land planner</p>
-          <h1 className="page-title">Customize the plot, road, direction, and house in one plan.</h1>
-          <p className="page-copy">Every setting updates the drawing. Plot sides, road width, north direction, house size, position, rotation, and clear spaces can all be adjusted.</p>
-        </div>
-        <div className="rounded-2xl border border-paper-200 bg-white px-5 py-4 shadow-card">
-          <p className="metric-label">Converted target</p>
-          <p className="numeral mt-1 text-2xl font-semibold text-ink-950">{formatDecimal(initialArea)} ft²</p>
-          <p className="numeral mt-1 text-xs text-ink-500">{formatDecimal(toSqM(initialArea), 3)} m²</p>
-        </div>
-      </header>
-
-      <div className="mt-6 grid gap-5 2xl:grid-cols-[23rem_minmax(0,1fr)]">
-        <aside className="space-y-4 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:pr-1 scrollbar-thin">
-          <ControlCard number="1" title="Plot" subtitle="Lock the converted area or edit both sides freely.">
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-paper-100 p-1">
-              <Toggle active={unit === 'ft'} label="Feet" onClick={() => setUnit('ft')} />
-              <Toggle active={unit === 'm'} label="Metres" onClick={() => setUnit('m')} />
-            </div>
-            <button type="button" onClick={() => setLockArea((current) => !current)} className={`focus-ring flex w-full items-center justify-between rounded-xl border px-3 py-3 text-sm font-semibold ${lockArea ? 'border-leaf-200 bg-leaf-50 text-leaf-900' : 'border-paper-300 bg-white text-ink-700'}`}>
-              {lockArea ? 'Converted area locked' : 'Free dimensions'}
-              {lockArea ? <Lock size={16} /> : <Unlock size={16} />}
-            </button>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Frontage" value={fromFeet(frontage, unit)} suffix={unit} min={1} onChange={updateFrontage} />
-              <NumberField label="Depth" value={fromFeet(depth, unit)} suffix={unit} min={1} onChange={updateDepth} />
-            </div>
-            <div><p className="field-label">Shape presets</p><div className="grid grid-cols-4 gap-2">{[1, 1.5, 2, 3].map((ratio) => <button key={ratio} type="button" onClick={() => applyRatio(ratio)} className="focus-ring rounded-lg border border-paper-300 bg-white py-2 text-xs font-semibold text-ink-600">{ratio === 1.5 ? '3:2' : `${ratio}:1`}</button>)}</div></div>
-          </ControlCard>
-
-          <ControlCard number="2" title="Road" subtitle="Place the road on any plot edge.">
-            <DirectionPicker label="Road side" value={roadSide} onChange={setRoadSide} />
-            <NumberField label="Road width" value={fromFeet(roadWidth, unit)} suffix={unit} min={3} onChange={(value) => setRoadWidth(toFeet(value, unit))} />
-          </ControlCard>
-
-          <ControlCard number="3" title="Direction" subtitle="Choose which edge points north.">
-            <DirectionPicker label="North edge" value={northSide} onChange={setNorthSide} />
-          </ControlCard>
-
-          <ControlCard number="4" title="House" subtitle="Resize and position the house footprint.">
-            <CheckField label="Show house" checked={showHouse} onChange={setShowHouse} />
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Width" value={fromFeet(houseWidth, unit)} suffix={unit} min={1} disabled={!showHouse} onChange={(value) => setHouseWidth(toFeet(value, unit))} />
-              <NumberField label="Depth" value={fromFeet(houseDepth, unit)} suffix={unit} min={1} disabled={!showHouse} onChange={(value) => setHouseDepth(toFeet(value, unit))} />
-              <NumberField label="From west" value={fromFeet(houseX, unit)} suffix={unit} min={0} disabled={!showHouse} onChange={(value) => setHouseX(toFeet(value, unit))} />
-              <NumberField label="From north" value={fromFeet(houseY, unit)} suffix={unit} min={0} disabled={!showHouse} onChange={(value) => setHouseY(toFeet(value, unit))} />
-            </div>
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-paper-100 p-1">
-              <Toggle active={!rotateHouse} label="0°" onClick={() => setRotateHouse(false)} />
-              <Toggle active={rotateHouse} label="90°" onClick={() => setRotateHouse(true)} />
-            </div>
-            <button type="button" disabled={!showHouse} onClick={() => { setHouseX(Math.max(0, (frontage - renderedHouseWidth) / 2)); setHouseY(Math.max(0, (depth - renderedHouseDepth) / 2)); }} className="button-secondary focus-ring w-full disabled:opacity-40">Center house</button>
-          </ControlCard>
-
-          <ControlCard number="5" title="Layers" subtitle="Choose what the plan displays.">
-            <CheckField label="Show measurements" checked={showDimensions} onChange={setShowDimensions} />
-            <CheckField label="Show grid" checked={showGrid} onChange={setShowGrid} />
-          </ControlCard>
-        </aside>
-
-        <main className="space-y-4">
-          <section className="panel overflow-hidden">
-            <div className="flex flex-col gap-3 border-b border-paper-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="section-title">Interactive site plan</p><p className="section-copy">The drawing is proportional to the entered measurements.</p></div>
-              <span className={`status-pill ${houseFits ? 'status-positive' : 'bg-red-50 text-red-700'}`}>{houseFits ? 'House fits inside plot' : 'House crosses plot boundary'}</span>
-            </div>
-            <div className="bg-[#eef2ee] p-3 sm:p-5"><SitePlan plan={plan} display={display} /></div>
-          </section>
-
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Stat label="Plot" value={`${display(frontage)} × ${display(depth)}`} sub={`${formatDecimal(plotArea)} ft²`} />
-            <Stat label="Road" value={display(roadWidth)} sub={`${roadSide} edge`} />
-            <Stat label="House" value={`${display(renderedHouseWidth)} × ${display(renderedHouseDepth)}`} sub={`${formatDecimal(houseWidth * houseDepth)} ft²`} />
-            <Stat label="Position" value={`${display(houseX)}, ${display(houseY)}`} sub="from west, north" />
-          </section>
-
-          <section className="grid gap-4 lg:grid-cols-3">
-            <InfoCard title="Hill system"><p className="text-sm font-semibold leading-6 text-ink-700">{formatHillsWords(initialArea)}</p></InfoCard>
-            <InfoCard title="Terai system"><p className="text-sm font-semibold leading-6 text-ink-700">{formatTeraiWords(initialArea)}</p></InfoCard>
-            <InfoCard title="Plan checks"><dl className="space-y-3"><CheckRow label="Area difference" value={`${plotArea - initialArea >= 0 ? '+' : ''}${formatDecimal(plotArea - initialArea)} ft²`} /><CheckRow label="East clearance" value={display(eastGap)} /><CheckRow label="South clearance" value={display(southGap)} /></dl></InfoCard>
-          </section>
-
-          <p className="rounded-xl border border-saffron-200 bg-saffron-50 px-4 py-3 text-xs leading-5 text-ink-600">This is a visual planning tool, not an approved cadastral or architectural drawing.</p>
-        </main>
-      </div>
+      <main className="space-y-4"><section className="panel overflow-hidden"><div className="border-b border-paper-200 px-5 py-4"><p className="section-title">Interactive site plan</p><p className="section-copy">Select a building, then drag it. Numerical controls remain available for precise placement.</p></div><div className="bg-[#eef2ee] p-3 sm:p-5"><SitePlan plan={plan} selectedId={selectedId} setSelectedId={setSelectedId} dragRef={dragRef} checkpoint={checkpoint} setBuildings={setBuildings}/></div></section><section className="grid gap-4 lg:grid-cols-3"><Info title="Hill system" value={formatHillsWords(plotArea)}/><Info title="Terai system" value={formatTeraiWords(plotArea)}/><Info title="Plan summary" value={`${buildings.length} building${buildings.length===1?'':'s'} · ${formatDecimal(toSqM(plotArea))} m²`}/></section><p className="rounded-xl border border-saffron-200 bg-saffron-50 px-4 py-3 text-xs leading-5 text-ink-600">This planner checks geometry for visual planning only. It does not apply municipality setbacks, structural rules, ownership boundaries, or construction approval requirements.</p></main>
     </div>
-  );
+  </div>;
 };
 
-const SitePlan = ({ plan, display }: { plan: Plan; display: (feet: number) => string }) => {
-  const width = 1040, height = 720, pad = 120;
-  const roadPx = clamp(plan.roadWidth * 2.2, 42, 110);
-  const horizontalRoad = plan.roadSide === 'north' || plan.roadSide === 'south';
-  const availableW = width - pad * 2 - (horizontalRoad ? 0 : roadPx);
-  const availableH = height - pad * 2 - (horizontalRoad ? roadPx : 0);
-  const scale = Math.min(availableW / Math.max(plan.frontage, 1), availableH / Math.max(plan.depth, 1));
-  const plotW = plan.frontage * scale, plotH = plan.depth * scale;
-  const plotX = pad + (plan.roadSide === 'west' ? roadPx : 0) + (availableW - plotW) / 2;
-  const plotY = pad + (plan.roadSide === 'north' ? roadPx : 0) + (availableH - plotH) / 2;
-  const road = plan.roadSide === 'north' ? { x: 0, y: 0, w: width, h: roadPx } : plan.roadSide === 'south' ? { x: 0, y: height - roadPx, w: width, h: roadPx } : plan.roadSide === 'west' ? { x: 0, y: 0, w: roadPx, h: height } : { x: width - roadPx, y: 0, w: roadPx, h: height };
-  const houseRenderedWidth = plan.rotateHouse ? plan.houseDepth : plan.houseWidth;
-  const houseRenderedDepth = plan.rotateHouse ? plan.houseWidth : plan.houseDepth;
-  const houseX = plotX + plan.houseX * scale, houseY = plotY + plan.houseY * scale;
-  const houseW = houseRenderedWidth * scale, houseH = houseRenderedDepth * scale;
-  const northRotation = { north: 0, east: 90, south: 180, west: -90 }[plan.northSide];
-
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="block h-auto w-full rounded-[1.5rem] border border-white/70 bg-[#edf2e9] shadow-[0_24px_70px_rgba(27,54,42,0.14)]" role="img" aria-label="Customizable measured land plan">
-      <defs><pattern id="plan-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#cbd7c8" strokeWidth="1" /></pattern><linearGradient id="land" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#92c184" /><stop offset="1" stopColor="#6ea668" /></linearGradient></defs>
-      <rect width={width} height={height} fill="#edf2e9" />{plan.showGrid && <rect width={width} height={height} fill="url(#plan-grid)" opacity=".65" />}
-      <rect x={road.x} y={road.y} width={road.w} height={road.h} fill="#3d4547" />
-      <text x={road.x + road.w / 2} y={road.y + road.h / 2 + 5} textAnchor="middle" fill="#fff" fontSize="14" fontWeight="800" transform={!horizontalRoad ? `rotate(-90 ${road.x + road.w / 2} ${road.y + road.h / 2})` : undefined}>ROAD · {display(plan.roadWidth)}</text>
-      <rect x={plotX} y={plotY} width={plotW} height={plotH} rx="8" fill="url(#land)" stroke="#173f2e" strokeWidth="5" />
-      <rect x={plotX + 8} y={plotY + 8} width={Math.max(0, plotW - 16)} height={Math.max(0, plotH - 16)} rx="5" fill="none" stroke="#f8f2dd" strokeWidth="2" strokeDasharray="10 8" />
-      {plan.showHouse && <g><rect x={houseX + 8} y={houseY + 10} width={houseW} height={houseH} rx="6" fill="#17352a" opacity=".18" /><rect x={houseX} y={houseY} width={houseW} height={houseH} rx="6" fill="#f7f1e6" stroke="#6e4d3d" strokeWidth="3" /><rect x={houseX + houseW * .08} y={houseY + houseH * .1} width={houseW * .84} height={houseH * .22} rx="4" fill="#b75d43" /></g>}
-      {plan.showDimensions && <><Dimension x1={plotX} y1={plotY - 34} x2={plotX + plotW} y2={plotY - 34} label={display(plan.frontage)} /><Dimension x1={plotX - 36} y1={plotY} x2={plotX - 36} y2={plotY + plotH} label={display(plan.depth)} vertical />{plan.showHouse && <><Dimension x1={houseX} y1={houseY + houseH + 28} x2={houseX + houseW} y2={houseY + houseH + 28} label={display(houseRenderedWidth)} /><Dimension x1={houseX + houseW + 28} y1={houseY} x2={houseX + houseW + 28} y2={houseY + houseH} label={display(houseRenderedDepth)} vertical /></>}</>}
-      <g transform={`translate(955 78) rotate(${northRotation})`}><circle r="32" fill="#fff" stroke="#d5c9b7" strokeWidth="2" /><path d="M0 -24L11 10L0 4L-11 10Z" fill="#d1692f" /><text x="0" y="24" textAnchor="middle" fill="#17352a" fontSize="13" fontWeight="900">N</text></g>
-    </svg>
-  );
+const SitePlan = ({ plan, selectedId, setSelectedId, dragRef, checkpoint, setBuildings }: { plan:PlannerProject; selectedId:string|null; setSelectedId:(id:string)=>void; dragRef:React.MutableRefObject<{id:string;startX:number;startY:number;originX:number;originY:number}|null>; checkpoint:()=>void; setBuildings:React.Dispatch<React.SetStateAction<PlanBuilding[]>> }) => {
+  const width=1000,height=700,pad=100; const scale=Math.min((width-pad*2)/Math.max(plan.frontage,1),(height-pad*2)/Math.max(plan.depth,1)); const ox=(width-plan.frontage*scale)/2,oy=(height-plan.depth*scale)/2;
+  const polygon=plan.plotPoints?.map((point)=>`${ox+point.x*scale},${oy+point.y*scale}`).join(' ') ?? '';
+  const move=(event:PointerEvent<SVGSVGElement>)=>{const drag=dragRef.current;if(!drag)return;const rect=event.currentTarget.getBoundingClientRect();const dx=(event.clientX-drag.startX)*(width/rect.width)/scale;const dy=(event.clientY-drag.startY)*(height/rect.height)/scale;setBuildings((items)=>items.map((item)=>item.id===drag.id?{...item,x:clamp(drag.originX+dx,0,plan.frontage),y:clamp(drag.originY+dy,0,plan.depth)}:item));};
+  return <svg id="napiyo-site-plan" viewBox={`0 0 ${width} ${height}`} className="h-auto w-full select-none" onPointerMove={move} onPointerUp={()=>{dragRef.current=null;}} onPointerLeave={()=>{dragRef.current=null;}} role="img" aria-label="Editable proportional site plan"><defs><pattern id="plan-grid" width={Math.max(scale*5,20)} height={Math.max(scale*5,20)} patternUnits="userSpaceOnUse"><path d={`M ${Math.max(scale*5,20)} 0 L 0 0 0 ${Math.max(scale*5,20)}`} fill="none" stroke="#d7dfda" strokeWidth="1"/></pattern></defs><rect width={width} height={height} rx="28" fill={plan.showGrid?'url(#plan-grid)':'#f8faf9'}/><polygon points={polygon} fill="#d8f1e7" stroke="#145d4c" strokeWidth="5"/>{plan.buildings.map((building)=>{const rw=(building.rotation===90?building.depth:building.width)*scale;const rh=(building.rotation===90?building.width:building.depth)*scale;const x=ox+building.x*scale,y=oy+building.y*scale;const active=selectedId===building.id;return <g key={building.id} onPointerDown={(event)=>{event.currentTarget.setPointerCapture(event.pointerId);checkpoint();setSelectedId(building.id);dragRef.current={id:building.id,startX:event.clientX,startY:event.clientY,originX:building.x,originY:building.y};}} className="cursor-move"><rect x={x} y={y} width={rw} height={rh} rx="8" fill={active?'#0f766e':'#ffffff'} stroke="#0f766e" strokeWidth={active?5:3}/><text x={x+rw/2} y={y+rh/2} textAnchor="middle" dominantBaseline="middle" fontSize="18" fontWeight="700" fill={active?'white':'#134e4a'}>{building.name}</text></g>;})}<text x="500" y="35" textAnchor="middle" fontSize="18" fontWeight="700" fill="#33443c">NORTH: {plan.northSide.toUpperCase()}</text><text x="500" y="675" textAnchor="middle" fontSize="16" fill="#55675e">Road {formatDecimal(plan.roadWidth)} ft · {plan.roadSide} edge</text>{plan.showDimensions&&<><text x="500" y={oy-18} textAnchor="middle" fontSize="16" fontWeight="700" fill="#33443c">{formatDecimal(plan.frontage)} ft</text><text x={ox-28} y="350" textAnchor="middle" fontSize="16" fontWeight="700" fill="#33443c" transform={`rotate(-90 ${ox-28} 350)`}>{formatDecimal(plan.depth)} ft</text></>}</svg>;
 };
 
-const Dimension = ({ x1, y1, x2, y2, label, vertical = false }: { x1: number; y1: number; x2: number; y2: number; label: string; vertical?: boolean }) => {
-  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-  return <g stroke="#17352a" fill="#17352a" fontFamily="Inter,system-ui" fontWeight="800"><line x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2" /><rect x={mx - (vertical ? 13 : 44)} y={my - (vertical ? 44 : 18)} width={vertical ? 26 : 88} height={vertical ? 88 : 26} rx="13" fill="#fff" stroke="#d5c9b7" /><text x={mx} y={my + 4} textAnchor="middle" fontSize="12" transform={vertical ? `rotate(-90 ${mx} ${my})` : undefined}>{label}</text></g>;
-};
-
-const ControlCard = ({ number, title, subtitle, children }: { number: string; title: string; subtitle: string; children: ReactNode }) => <section className="panel p-5"><div className="flex gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-950 text-xs font-semibold text-white">{number}</span><div><h2 className="text-base font-semibold text-ink-950">{title}</h2><p className="mt-1 text-xs leading-5 text-ink-500">{subtitle}</p></div></div><div className="mt-4 space-y-4">{children}</div></section>;
-const NumberField = ({ label, value, suffix, min, onChange, disabled = false }: { label: string; value: number; suffix: string; min: number; onChange: (value: number) => void; disabled?: boolean }) => <label className="block"><span className="field-label">{label}</span><div className="relative"><input type="number" value={Number(value.toFixed(2))} min={min} step="0.1" disabled={disabled} onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(Number(event.target.value) || 0)} className="field numeral pr-12 font-semibold disabled:opacity-45" /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-400">{suffix}</span></div></label>;
-const DirectionPicker = ({ label, value, onChange }: { label: string; value: Side; onChange: (value: Side) => void }) => <div><p className="field-label">{label}</p><div className="grid grid-cols-4 gap-2">{SIDES.map((side) => <button key={side} type="button" onClick={() => onChange(side)} className={`focus-ring rounded-lg border px-2 py-2 text-xs font-semibold ${value === side ? 'border-ink-950 bg-ink-950 text-white' : 'border-paper-300 bg-white text-ink-600'}`}>{side[0].toUpperCase()}</button>)}</div></div>;
-const CheckField = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) => <label className="flex items-center justify-between gap-3 rounded-xl bg-paper-100 px-3 py-3 text-sm font-semibold text-ink-700"><span>{label}</span><input type="checkbox" checked={checked} onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.checked)} className="h-5 w-5 accent-[#1c613d]" /></label>;
-const Toggle = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => <button type="button" onClick={onClick} className={`focus-ring flex-1 rounded-lg px-4 py-2 text-sm font-semibold ${active ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500'}`}>{label}</button>;
-const Stat = ({ label, value, sub }: { label: string; value: string; sub: string }) => <div className="panel p-4"><p className="metric-label">{label}</p><p className="numeral mt-2 text-lg font-semibold text-ink-950">{value}</p><p className="mt-1 text-xs text-ink-400">{sub}</p></div>;
-const InfoCard = ({ title, children }: { title: string; children: ReactNode }) => <section className="panel p-5"><p className="section-title">{title}</p><div className="mt-4 space-y-3">{children}</div></section>;
-const CheckRow = ({ label, value }: { label: string; value: string }) => <div className="flex items-center justify-between gap-4 text-sm"><dt className="font-medium text-ink-500">{label}</dt><dd className="numeral text-right font-semibold text-ink-950">{value}</dd></div>;
-
+const Control=({title,children}:{title:string;children:React.ReactNode})=><section className="panel p-5"><h2 className="section-title">{title}</h2><div className="mt-4 space-y-4">{children}</div></section>;
+const Toggle=({active,label,onClick}:{active:boolean;label:string;onClick:()=>void})=><button type="button" onClick={onClick} className={`focus-ring rounded-lg px-3 py-2 text-xs font-semibold ${active?'bg-ink-950 text-white':'border border-paper-300 bg-white text-ink-600'}`}>{label}</button>;
+const NumberField=({label,value,suffix,min=1,onChange}:{label:string;value:number;suffix:string;min?:number;onChange:(value:number)=>void})=><label className="block"><span className="field-label">{label}</span><div className="relative"><input type="number" min={min} step="0.1" value={Number(value.toFixed(2))} onChange={(event)=>onChange(Number(event.target.value)||0)} className="field numeral pr-12"/><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-400">{suffix}</span></div></label>;
+const DirectionPicker=({label,value,onChange}:{label:string;value:CardinalSide;onChange:(value:CardinalSide)=>void})=><div><p className="field-label">{label}</p><div className="grid grid-cols-4 gap-1">{SIDES.map((side)=><Toggle key={side} active={value===side} label={side[0].toUpperCase()} onClick={()=>onChange(side)}/>)}</div></div>;
+const CheckField=({label,checked,onChange}:{label:string;checked:boolean;onChange:(value:boolean)=>void})=><label className="flex items-center justify-between gap-3 rounded-xl border border-paper-300 bg-white px-3 py-3 text-sm font-semibold text-ink-700"><span>{label}</span><input type="checkbox" checked={checked} onChange={(event)=>onChange(event.target.checked)} className="h-5 w-5 accent-emerald-700"/></label>;
+const Info=({title,value}:{title:string;value:string})=><section className="panel p-5"><p className="metric-label">{title}</p><p className="mt-2 text-sm font-semibold leading-6 text-ink-800">{value}</p></section>;
 export default VisualizeScreen;
