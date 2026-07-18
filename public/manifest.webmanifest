@@ -1,0 +1,15 @@
+{
+  "name": "Napiyo — Nepal Land Tools",
+  "short_name": "Napiyo",
+  "description": "Convert Nepal land units, estimate plot measurements, calculate prices, and save projects offline.",
+  "start_url": "/#convert",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f9ff",
+  "theme_color": "#0ea5e9",
+  "orientation": "any",
+  "categories": ["utilities", "productivity", "education"],
+  "icons": [
+    { "src": "/napiyo-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
