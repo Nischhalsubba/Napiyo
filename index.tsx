@@ -14,3 +14,11 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>,
 );
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Napiyo offline mode could not be enabled.', error);
+    });
+  });
+}
