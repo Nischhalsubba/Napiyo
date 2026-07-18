@@ -15,8 +15,8 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run check && npm run test && npm run build",
-    "build": "npm run check && vite build",
+    "verify": "npm run build",
+    "build": "npm run check && npm run test && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
