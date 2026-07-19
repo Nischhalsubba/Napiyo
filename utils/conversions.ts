@@ -147,3 +147,25 @@ export const calculatePolygonPerimeterPx = (points: Point[]): number => {
 };
 
 export const distance = (first: Point, second: Point): number => Math.hypot(second.x - first.x, second.y - first.y);
+
+const orientation = (a: Point, b: Point, c: Point): number => Math.sign((b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y));
+const onSegment = (a: Point, b: Point, c: Point): boolean => b.x <= Math.max(a.x, c.x) + EPSILON && b.x + EPSILON >= Math.min(a.x, c.x) && b.y <= Math.max(a.y, c.y) + EPSILON && b.y + EPSILON >= Math.min(a.y, c.y);
+const segmentsIntersect = (a: Point, b: Point, c: Point, d: Point): boolean => {
+  const o1 = orientation(a, b, c), o2 = orientation(a, b, d), o3 = orientation(c, d, a), o4 = orientation(c, d, b);
+  if (o1 !== o2 && o3 !== o4) return true;
+  return (o1 === 0 && onSegment(a, c, b)) || (o2 === 0 && onSegment(a, d, b)) || (o3 === 0 && onSegment(c, a, d)) || (o4 === 0 && onSegment(c, b, d));
+};
+
+export const polygonSelfIntersects = (points: Point[]): boolean => {
+  if (points.length < 4) return false;
+  for (let first = 0; first < points.length; first += 1) {
+    const firstNext = (first + 1) % points.length;
+    for (let second = first + 1; second < points.length; second += 1) {
+      const secondNext = (second + 1) % points.length;
+      if (first === second || firstNext === second || secondNext === first) continue;
+      if (first === 0 && secondNext === 0) continue;
+      if (segmentsIntersect(points[first], points[firstNext], points[second], points[secondNext])) return true;
+    }
+  }
+  return false;
+};
