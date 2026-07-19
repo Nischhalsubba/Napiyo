@@ -4,8 +4,10 @@ import {
   areaSqFtFromGeo,
   averageAccuracyM,
   haversineDistanceM,
+  metresPerPixel,
   polygonAreaSqM,
   polygonPerimeterM,
+  projectGeoToWorldPixels,
   projectToGeoJson,
   projectToGpx,
   projectToKml,
@@ -42,6 +44,16 @@ describe('GPS geometry', () => {
 
   it('summarizes GPS accuracy', () => {
     expect(averageAccuracyM([point(0, 0, 4), point(0, 0, 8)])).toBe(6);
+  });
+
+  it('projects coordinates consistently for slippy-map tiles', () => {
+    const origin = projectGeoToWorldPixels(point(0, 0), 1);
+    expect(origin.x).toBeCloseTo(256, 5);
+    expect(origin.y).toBeCloseTo(256, 5);
+    const kathmandu = projectGeoToWorldPixels(point(27.7, 85.3), 18);
+    expect(Number.isFinite(kathmandu.x)).toBe(true);
+    expect(Number.isFinite(kathmandu.y)).toBe(true);
+    expect(metresPerPixel(27.7, 18)).toBeGreaterThan(0);
   });
 });
 
