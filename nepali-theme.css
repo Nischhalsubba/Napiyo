@@ -1,0 +1,204 @@
+.converter-page {
+  position: relative;
+}
+
+.converter-page::before {
+  content: "";
+  position: fixed;
+  inset: 4rem 0 auto;
+  height: 0.28rem;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--color-primary) 0 78%, var(--color-accent) 78% 100%);
+  opacity: 0.92;
+  z-index: 2;
+}
+
+.nepali-hero {
+  position: relative;
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  padding: clamp(1.35rem, 3vw, 2.4rem);
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--color-primary-subtle) 92%, var(--color-surface)), var(--color-surface) 68%),
+    var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.nepali-hero::before,
+.nepali-hero::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.nepali-hero::before {
+  inset: 0 auto 0 0;
+  width: 0.38rem;
+  background: linear-gradient(var(--color-primary) 0 72%, var(--color-accent) 72% 100%);
+}
+
+.nepali-hero::after {
+  right: -4rem;
+  top: -5rem;
+  width: 17rem;
+  height: 17rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-radius: 46% 54% 58% 42%;
+  transform: rotate(28deg);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 13px, color-mix(in srgb, var(--color-primary) 5%, transparent) 13px 14px);
+}
+
+.nepali-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 55rem;
+}
+
+.nepali-hero-english {
+  margin: 0.55rem 0 0.35rem;
+  color: var(--color-primary);
+  font-size: clamp(1rem, 2vw, 1.22rem);
+  font-weight: 720;
+  letter-spacing: -0.02em;
+}
+
+.nepali-hero-emblem {
+  position: relative;
+  z-index: 1;
+  display: none;
+  justify-self: end;
+  width: 11rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  box-shadow: inset 0 0 0 0.55rem color-mix(in srgb, var(--color-primary-subtle) 68%, transparent);
+}
+
+.nepali-hero-emblem::before,
+.nepali-hero-emblem::after {
+  content: "";
+  position: absolute;
+  width: 58%;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+
+.nepali-hero-emblem::before { transform: rotate(45deg); }
+.nepali-hero-emblem::after { transform: rotate(-45deg); }
+.nepali-hero-emblem span {
+  position: absolute;
+  border-radius: 999px;
+  padding: 0.38rem 0.65rem;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 760;
+  box-shadow: var(--shadow-card);
+}
+.nepali-hero-emblem span:nth-child(1) { top: 1rem; }
+.nepali-hero-emblem span:nth-child(2) { bottom: 1rem; left: 0.1rem; color: var(--color-accent); }
+.nepali-hero-emblem span:nth-child(3) { bottom: 1rem; right: 0.35rem; }
+
+.nepali-system-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 1.25rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 720;
+  width: fit-content;
+}
+
+.nepali-system-band i {
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.nepali-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.nepali-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(var(--color-primary) 0 84%, var(--color-accent) 84% 100%);
+}
+
+.voice-console {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+  border-radius: 0.9rem;
+  padding: 0.85rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary-subtle) 70%, var(--color-surface)), var(--color-surface));
+}
+
+.nepal-result-card,
+.nepali-price-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% -25%, color-mix(in srgb, var(--color-accent) 26%, transparent), transparent 15rem),
+    linear-gradient(135deg, #001236, #002b73 63%, #003893);
+}
+
+.nepal-result-card {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 70%, #001236);
+}
+
+.nepal-result-card::after,
+.nepali-price-card::after {
+  content: "";
+  position: absolute;
+  right: -2.5rem;
+  bottom: -4rem;
+  width: 11rem;
+  height: 11rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.nepali-price-card {
+  border-radius: 0.85rem;
+  padding: 1rem;
+  color: #fff;
+}
+
+html.dark .nepali-hero {
+  background:
+    linear-gradient(118deg, color-mix(in srgb, #172541 82%, var(--color-surface)), var(--color-surface) 72%);
+}
+
+html.dark .voice-console {
+  background: linear-gradient(135deg, #172541, var(--color-surface));
+}
+
+@media (min-width: 860px) {
+  .nepali-hero { grid-template-columns: minmax(0, 1fr) auto; }
+  .nepali-hero-emblem { display: grid; }
+}
+
+@media (max-width: 639px) {
+  .converter-page::before { top: 3.95rem; }
+  .nepali-hero { border-radius: 1rem; }
+  .nepali-system-band { border-radius: 0.9rem; width: 100%; justify-content: center; }
+}
