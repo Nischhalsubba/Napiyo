@@ -11,12 +11,13 @@
   },
   "packageManager": "npm@10.9.2",
   "scripts": {
-    "dev": "vite",
+    "prepare:seo": "node scripts/prepare-seo-assets.mjs",
+    "dev": "npm run prepare:seo && vite",
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "npm run check && npm run test && vite build",
-    "build:cloudflare": "npm run check && npm run test && vite build",
+    "build": "npm run prepare:seo && npm run check && npm run test && vite build",
+    "build:cloudflare": "npm run prepare:seo && npm run check && npm run test && vite build",
     "verify": "npm run build:cloudflare",
     "preview": "vite preview"
   },
