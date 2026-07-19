@@ -40,7 +40,7 @@ test.describe('Field GPS boundary workflow', () => {
     await expect(page.getByRole('button', { name: /Record GPS corner 1/ })).toBeDisabled();
     await expect(page.getByText(/GPS capture is paused because ±91 m exceeds/)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Draw corners' }).click();
+    await page.getByRole('button', { name: 'Draw corners', exact: true }).click();
     const canvas = page.getByTestId('gps-map-canvas');
     await canvas.click({ position: { x: 420, y: 260 } });
     await canvas.click({ position: { x: 580, y: 270 } });
@@ -52,11 +52,14 @@ test.describe('Field GPS boundary workflow', () => {
     await expect(page.getByRole('button', { name: 'Save project' })).toBeEnabled();
 
     const areaCard = page.getByText('Estimated area', { exact: true }).locator('..');
-    await expect(areaCard).not.toContainText('0 Ft²');
+    const areaText = await areaCard.textContent();
+    const area = Number(areaText?.match(/([\d,.]+) ft²/)?.[1].replaceAll(',', '') ?? 0);
+    expect(area).toBeGreaterThan(1);
+    expect(area).toBeLessThan(1_000_000);
 
     const firstMarker = page.getByTestId('gps-corner-1');
     const markerBeforePan = await firstMarker.getAttribute('style');
-    await page.getByRole('button', { name: 'Move' }).click();
+    await page.getByRole('button', { name: 'Move', exact: true }).click();
     const canvasBox = await canvas.boundingBox();
     expect(canvasBox).not.toBeNull();
     if (!canvasBox) return;
@@ -78,7 +81,7 @@ test.describe('Field GPS boundary workflow', () => {
   });
 
   test('can zoom and recenter without losing drawn corners', async ({ page }) => {
-    await page.getByRole('button', { name: 'Draw corners' }).click();
+    await page.getByRole('button', { name: 'Draw corners', exact: true }).click();
     const canvas = page.getByTestId('gps-map-canvas');
     await canvas.click({ position: { x: 450, y: 260 } });
     await canvas.click({ position: { x: 570, y: 280 } });
