@@ -33,7 +33,7 @@ const GpsMap = ({ latest, points, onPointsChange, notify }: Props) => {
   const [failedTiles, setFailedTiles] = useState<Set<string>>(() => new Set());
   const [center, setCenter] = useState(() => latest ?? points.at(-1) ?? NEPAL_CENTER);
   const [mode, setMode] = useState<MapMode>('pan');
-  const [followLocation, setFollowLocation] = useState(Boolean(latest));
+  const [followLocation, setFollowLocation] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     pointerId: number;
