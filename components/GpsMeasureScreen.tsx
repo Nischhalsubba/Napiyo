@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Crosshair, Download, LocateFixed, MapPin, Pause, Play, RotateCcw, Save, Trash2, Undo2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Crosshair, Download, MapPin, Pause, Play, Save, Trash2, Undo2 } from 'lucide-react';
 import { GeoPoint, SavedItem } from '../types';
 import { formatDecimal, formatHillsWords, formatTeraiWords, toSqM } from '../utils/conversions';
 import {
@@ -10,8 +10,8 @@ import {
   projectToGpx,
   projectToKml,
   shouldAcceptPoint,
-  toLocalMetres,
 } from '../utils/geospatial';
+import GpsMap from './GpsMap';
 
 interface Props {
   onSave: (item: SavedItem) => boolean;
@@ -106,13 +106,11 @@ const GpsMeasureScreen = ({ onSave, notify }: Props) => {
     download(`napiyo-gps-plot.${kind}`, exports[kind][0], exports[kind][1]);
   };
 
-  const localPoints = useMemo(() => toLocalMetres(points), [points]);
-
   return <div className="page-shell animate-enter !max-w-[96rem]">
     <header className="page-header max-w-4xl">
       <p className="eyebrow">Field GPS estimate</p>
       <h1 className="page-title">Stand at each plot corner and record it.</h1>
-      <p className="page-copy">Napiyo uses your device location without a map provider. Wait for a good accuracy reading at every corner, add the point, and export the result as GeoJSON, KML, or GPX.</p>
+      <p className="page-copy">Napiyo shows your live position on OpenStreetMap. Wait for a good accuracy reading at every corner, add each point in order, and export the boundary as GeoJSON, KML, or GPX.</p>
     </header>
 
     <div className="grid gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]">
@@ -140,8 +138,8 @@ const GpsMeasureScreen = ({ onSave, notify }: Props) => {
 
       <main className="space-y-4">
         <section className="panel overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4"><div><p className="section-title">Boundary preview</p><p className="section-copy">The shape is normalized to fit this canvas. It is not a satellite map.</p></div><Crosshair size={20} className="text-leaf-700"/></div>
-          <div className="min-h-[380px] bg-[#eef2ee] p-4 sm:min-h-[520px]"><GpsPreview points={localPoints}/></div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4"><div><p className="section-title">Live boundary map</p><p className="section-copy">OpenStreetMap tiles show your position, accuracy radius, and recorded corners.</p></div><Crosshair size={20} className="text-leaf-700"/></div>
+          <GpsMap latest={latest} points={points}/>
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -155,15 +153,6 @@ const GpsMeasureScreen = ({ onSave, notify }: Props) => {
       </main>
     </div>
   </div>;
-};
-
-const GpsPreview = ({ points }: { points: { x: number; y: number }[] }) => {
-  if (!points.length) return <div className="flex min-h-[350px] flex-col items-center justify-center text-center text-ink-400"><LocateFixed size={40}/><p className="mt-3 text-sm font-semibold">Start location and add your first corner.</p></div>;
-  const xs = points.map((point) => point.x), ys = points.map((point) => point.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-  const width = Math.max(maxX - minX, 1), height = Math.max(maxY - minY, 1);
-  const normalized = points.map((point) => ({ x: 60 + ((point.x - minX) / width) * 880, y: 60 + ((maxY - point.y) / height) * 520 }));
-  return <svg viewBox="0 0 1000 640" className="h-full min-h-[350px] w-full" role="img" aria-label={`GPS polygon with ${points.length} recorded corners`}><defs><pattern id="gps-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d5ded9" strokeWidth="1"/></pattern></defs><rect width="1000" height="640" rx="24" fill="url(#gps-grid)"/><path d={`M ${normalized.map((point) => `${point.x},${point.y}`).join(' L ')} ${points.length >= 3 ? 'Z' : ''}`} fill={points.length >= 3 ? 'rgba(16,185,129,.2)' : 'none'} stroke="#0f766e" strokeWidth="6" strokeLinejoin="round"/>{normalized.map((point, index) => <g key={index}><circle cx={point.x} cy={point.y} r="13" fill="#0f766e" stroke="white" strokeWidth="5"/><text x={point.x} y={point.y - 22} textAnchor="middle" fontSize="20" fontWeight="700" fill="#0f172a">{index + 1}</text></g>)}</svg>;
 };
 
 const Stat = ({ label, value, sub }: { label: string; value: string; sub: string }) => <div className="panel p-4"><p className="metric-label">{label}</p><p className="numeral mt-2 text-xl font-semibold capitalize text-ink-950">{value}</p><p className="mt-1 text-xs text-ink-500">{sub}</p></div>;
