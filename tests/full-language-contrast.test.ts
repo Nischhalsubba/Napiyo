@@ -9,6 +9,11 @@ const learn = read('components/LearnScreen.tsx');
 const image = read('components/MeasureScreen.tsx');
 const gps = read('components/GpsMeasureScreen.tsx');
 const map = read('components/GpsMap.tsx');
+const saved = read('components/SavedScreen.tsx');
+const planner = read('components/VisualizeScreen.tsx');
+const review = read('components/SavedMeasurementReview.tsx');
+const converter = read('components/ConvertScreen.tsx');
+const conversions = read('utils/conversions.ts');
 
 const luminance = (hex: string) => {
   const rgb = hex.replace('#', '').match(/.{2}/g)!.map((value) => Number.parseInt(value, 16) / 255);
@@ -37,11 +42,22 @@ describe('complete language and contrast layer', () => {
     expect(contrastCss).toContain('.nepal-result-card > div:first-child .text-ink-300');
   });
 
-  it('makes major workspaces react to the app language', () => {
-    for (const source of [learn, image, gps, map]) {
+  it('makes every major workspace react to the app language', () => {
+    for (const source of [learn, image, gps, map, saved, planner, review]) {
       expect(source).toContain('useAppLanguage');
-      expect(source).toMatch(/language\s*===\s*'ne'/);
+      expect(source).toMatch(/language\s*=?.*useAppLanguage/);
+      expect(source).toMatch(/language\s*===\s*'ne'|language==='ne'/);
     }
+    expect(converter).toContain("language==='ne'");
+  });
+
+  it('localizes shared numbers, unit words, parser feedback, reports, and map controls', () => {
+    expect(conversions).toContain("document.documentElement.lang==='ne'");
+    expect(conversions).toContain("ne:'रोपनी'");
+    expect(conversions).toContain('एकाइ पहिचान गर्न सकिएन');
+    expect(saved).toContain('सबै स्थानीय डाटा हटाउनुहोस्');
+    expect(planner).toContain('जग्गाको आकार मिलाउनुहोस्');
+    expect(map).toContain('कुना कोर्नुहोस्');
   });
 
   it('does not mix bilingual headings in the learning centre', () => {
