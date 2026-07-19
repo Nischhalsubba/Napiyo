@@ -6,7 +6,7 @@ const parts = [
   resolve(root, 'seo-assets/social-preview.part1.b64'),
   resolve(root, 'seo-assets/social-preview.part2.b64'),
 ];
-const output = resolve(root, 'public/napiyo-social-preview.png');
+const output = resolve(root, 'public/napiyo-social-preview-v1.png');
 
 const encoded = parts.map((path) => readFileSync(path, 'utf8').trim()).join('');
 const image = Buffer.from(encoded, 'base64');
