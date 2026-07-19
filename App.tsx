@@ -7,6 +7,7 @@ import ConvertScreen from './components/ConvertScreen';
 import GpsMeasureScreen from './components/GpsMeasureScreen';
 import LearnScreen from './components/LearnScreen';
 import MeasureScreen from './components/MeasureScreen';
+import SavedMeasurementReview from './components/SavedMeasurementReview';
 import SavedScreen from './components/SavedScreen';
 import VisualizeScreen from './components/VisualizeScreen';
 import { clearItems, hydrateItems, loadItems, saveItems } from './lib/storage';
@@ -127,7 +128,8 @@ const App = () => {
     </header>
     <main id="main-content" className="app-main scrollbar-thin">
       {activeView === 'convert' && <ConvertScreen onSave={handleSave} onVisualize={visualize} notify={setToast}/>} 
-      {activeView === 'measure' && <MeasureScreen onSave={handleSave} notify={setToast} initialProject={activeProject}/>} 
+      {activeView === 'measure' && activeProject?.type === 'MEASURED' && <SavedMeasurementReview project={activeProject} onBack={() => navigate('saved')} onStartNew={() => { setActiveProject(null); navigate('measure', true); }} onVisualize={visualize}/>} 
+      {activeView === 'measure' && activeProject?.type !== 'MEASURED' && <MeasureScreen onSave={handleSave} notify={setToast}/>} 
       {activeView === 'gps' && <GpsMeasureScreen onSave={handleSave} notify={setToast} initialProject={activeProject}/>} 
       {activeView === 'saved' && <SavedScreen items={savedItems} onDelete={(id) => setPendingDelete(savedItems.find((item) => item.id === id) ?? null)} onOpen={openProject} onClearAll={clearAll} onImport={handleImport} notify={setToast}/>} 
       {activeView === 'visualize' && <VisualizeScreen initialArea={visualizedArea} initialProject={activeProject} onBack={() => navigate('saved')} onSave={handleSave} notify={setToast}/>} 
