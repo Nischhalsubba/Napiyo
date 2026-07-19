@@ -1,0 +1,50 @@
+name: Field GPS E2E
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'components/GpsMap.tsx'
+      - 'components/GpsMeasureScreen.tsx'
+      - 'utils/geospatial.ts'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - 'package.json'
+      - '.github/workflows/gps-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gps-browser-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Field GPS E2E
+        run: npm run test:e2e
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gps-e2e-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
