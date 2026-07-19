@@ -40,7 +40,7 @@ describe('complete language and contrast layer', () => {
   it('makes major workspaces react to the app language', () => {
     for (const source of [learn, image, gps, map]) {
       expect(source).toContain('useAppLanguage');
-      expect(source).toContain("language === 'ne'");
+      expect(source).toMatch(/language\s*===\s*'ne'/);
     }
   });
 
