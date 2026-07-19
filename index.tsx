@@ -4,6 +4,7 @@ import App from './App';
 import './index.css';
 import './accessibility.css';
 import './dark-contrast.css';
+import './nepali-theme.css';
 
 const rootElement = document.getElementById('root');
 
