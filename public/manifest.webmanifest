@@ -1,15 +1,51 @@
 {
   "name": "Napiyo — Nepal Land Tools",
   "short_name": "Napiyo",
-  "description": "Convert Nepal land units, estimate plot measurements, calculate prices, and save projects offline.",
+  "description": "Convert Nepal land units, estimate prices, trace plot images, record GPS corners and plan sites locally.",
+  "id": "/",
   "start_url": "/#convert",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#FAFAF8",
   "theme_color": "#003893",
   "orientation": "any",
+  "lang": "en-NP",
+  "dir": "ltr",
   "categories": ["utilities", "productivity", "education"],
   "icons": [
     { "src": "/napiyo-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/napiyo-social-preview-v1.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Napiyo Nepal Land Tools"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Convert land units",
+      "short_name": "Convert",
+      "description": "Convert Nepal and standard land units.",
+      "url": "/#convert",
+      "icons": [{ "src": "/napiyo-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Measure with Field GPS",
+      "short_name": "Field GPS",
+      "description": "Record approximate plot corners with browser GPS.",
+      "url": "/#field",
+      "icons": [{ "src": "/napiyo-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Open site planner",
+      "short_name": "Plan",
+      "description": "Arrange buildings on a visual site plan.",
+      "url": "/#visualize",
+      "icons": [{ "src": "/napiyo-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
   ]
 }
