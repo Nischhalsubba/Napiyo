@@ -21,10 +21,8 @@ jobs:
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package.json
-      - name: Install dependencies
+          node-version: '22'
+      - name: Install pinned dependencies
         run: npm install --no-audit --no-fund
       - name: Typecheck, test, and build Cloudflare output
         run: npm run build:cloudflare
@@ -36,3 +34,6 @@ jobs:
           test -f dist/sw.js
           test -f wrangler.jsonc
           test ! -f dist/_redirects
+          test -z "$(find dist/assets -name '*.map' -print -quit)"
+          grep -q "Content-Security-Policy" dist/_headers
+          grep -q "Strict-Transport-Security" dist/_headers
