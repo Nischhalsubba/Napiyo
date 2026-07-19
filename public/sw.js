@@ -1,4 +1,4 @@
-const CACHE_NAME = 'napiyo-shell-v2';
+const CACHE_NAME = 'napiyo-shell-v3';
 const CORE_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/napiyo-icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -22,8 +22,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+          const contentType = response.headers.get('content-type') || '';
+          if (response.ok && contentType.includes('text/html')) {
+            const copy = response.clone();
+            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy)));
+          }
           return response;
         })
         .catch(() => caches.match('/index.html')),
@@ -31,11 +34,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const cacheable = url.pathname.startsWith('/assets/')
+    || url.pathname === '/manifest.webmanifest'
+    || url.pathname === '/napiyo-icon.svg';
+  if (!cacheable) return;
+
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
       if (!response.ok || response.type === 'opaque') return response;
       const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)));
       return response;
     })),
   );
