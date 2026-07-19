@@ -3,202 +3,49 @@ import { Crosshair, Download, MapPin, Pause, Play, Save, Trash2, Undo2, X } from
 import { GeoPoint, SavedItem } from '../types';
 import { formatDecimal, formatHillsWords, formatTeraiWords, toSqM } from '../utils/conversions';
 import {
-  areaSqFtFromGeo,
-  averageAccuracyM,
-  haversineDistanceM,
-  perimeterFtFromGeo,
-  projectToGeoJson,
-  projectToGpx,
-  projectToKml,
-  shouldAcceptPoint,
+  areaSqFtFromGeo, averageAccuracyM, haversineDistanceM, perimeterFtFromGeo,
+  projectToGeoJson, projectToGpx, projectToKml, shouldAcceptPoint,
 } from '../utils/geospatial';
+import { useAppLanguage } from '../utils/useAppLanguage';
 import GpsMap from './GpsMap';
 
-interface Props {
-  onSave: (item: SavedItem) => boolean;
-  notify: (message: string) => void;
-  initialProject?: SavedItem | null;
-}
+interface Props { onSave: (item: SavedItem) => boolean; notify: (message: string) => void; initialProject?: SavedItem | null; }
+const download = (filename: string, content: string, type: string) => { const url=URL.createObjectURL(new Blob([content],{type})); const link=document.createElement('a'); link.href=url; link.download=filename; link.rel='noopener'; link.click(); setTimeout(()=>URL.revokeObjectURL(url),0); };
+const median = (values:number[]) => { const sorted=[...values].sort((a,b)=>a-b); const middle=Math.floor(sorted.length/2); return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2; };
 
-const download = (filename: string, content: string, type: string) => {
-  const url = URL.createObjectURL(new Blob([content], { type }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-};
-
-const median = (values: number[]) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-};
-
-const GpsMeasureScreen = ({ onSave, notify, initialProject = null }: Props) => {
-  const initialPoints = initialProject?.type === 'GPS' ? initialProject.source?.geoPoints ?? [] : [];
-  const [latest, setLatest] = useState<GeoPoint | null>(null);
-  const [points, setPoints] = useState<GeoPoint[]>(initialPoints);
-  const [maximumAccuracy, setMaximumAccuracy] = useState(20);
-  const [watching, setWatching] = useState(false);
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(Boolean(initialPoints.length));
-  const watchId = useRef<number | null>(null);
-  const samples = useRef<GeoPoint[]>([]);
-
-  const areaSqFt = areaSqFtFromGeo(points);
-  const perimeterFt = perimeterFtFromGeo(points);
-  const gpsPoints = points.filter((point) => point.accuracy > 0);
-  const manualPoints = points.length - gpsPoints.length;
-  const averageAccuracy = averageAccuracyM(gpsPoints);
-  const worstAccuracy = gpsPoints.length ? Math.max(...gpsPoints.map((point) => point.accuracy)) : 0;
-  const acceptable = latest ? latest.accuracy <= maximumAccuracy : false;
-  const confidence = manualPoints > 0
-    ? 'LOW'
-    : averageAccuracy <= 5 && points.length >= 4
-      ? 'HIGH'
-      : averageAccuracy <= 12 && points.length >= 3
-        ? 'MEDIUM'
-        : 'LOW';
-
-  const stop = () => {
-    if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
-    watchId.current = null;
-    setWatching(false);
-    samples.current = [];
+const GpsMeasureScreen = ({ onSave, notify, initialProject=null }: Props) => {
+  const language=useAppLanguage(); const ne=language==='ne';
+  const initialPoints=initialProject?.type==='GPS'?initialProject.source?.geoPoints??[]:[];
+  const [latest,setLatest]=useState<GeoPoint|null>(null); const [points,setPoints]=useState<GeoPoint[]>(initialPoints);
+  const [maximumAccuracy,setMaximumAccuracy]=useState(20); const [watching,setWatching]=useState(false); const [error,setError]=useState(''); const [saved,setSaved]=useState(Boolean(initialPoints.length));
+  const watchId=useRef<number|null>(null); const samples=useRef<GeoPoint[]>([]);
+  const areaSqFt=areaSqFtFromGeo(points); const perimeterFt=perimeterFtFromGeo(points); const gpsPoints=points.filter(point=>point.accuracy>0); const manualPoints=points.length-gpsPoints.length;
+  const averageAccuracy=averageAccuracyM(gpsPoints); const worstAccuracy=gpsPoints.length?Math.max(...gpsPoints.map(point=>point.accuracy)):0; const acceptable=latest?latest.accuracy<=maximumAccuracy:false;
+  const confidence=manualPoints>0?'LOW':averageAccuracy<=5&&points.length>=4?'HIGH':averageAccuracy<=12&&points.length>=3?'MEDIUM':'LOW';
+  const stop=()=>{if(watchId.current!==null)navigator.geolocation.clearWatch(watchId.current);watchId.current=null;setWatching(false);samples.current=[];};
+  const start=()=>{
+    if(!('geolocation'in navigator))return setError(ne?'यो ब्राउजरले स्थान पहुँच दिँदैन। नक्सामा कुना कोर्नुहोस्।':'This browser does not provide location access. Use Draw corners on the map instead.');
+    setError('');setWatching(true);
+    watchId.current=navigator.geolocation.watchPosition(position=>{const sample:GeoPoint={lat:position.coords.latitude,lng:position.coords.longitude,accuracy:position.coords.accuracy,altitude:position.coords.altitude,timestamp:position.timestamp};samples.current=[...samples.current.slice(-6),sample];const usable=samples.current.filter(item=>item.accuracy<=Math.max(maximumAccuracy*2,60));const source=usable.length?usable:samples.current;setLatest({lat:median(source.map(item=>item.lat)),lng:median(source.map(item=>item.lng)),accuracy:median(source.map(item=>item.accuracy)),altitude:sample.altitude,timestamp:sample.timestamp});},reason=>{setError(reason.code===1?(ne?'स्थान अनुमति अस्वीकार भयो। सटीक स्थान अनुमति दिनुहोस् वा नक्सामा सिमाना कोर्नुहोस्।':'Location permission was denied. Allow precise location or draw the boundary directly on the map.'):reason.code===3?(ne?'स्थान प्राप्त गर्न समय सकियो। बाहिर जानुहोस्, स्क्रिन खुला राख्नुहोस् वा नक्सामा कोर्नुहोस्।':'Location timed out. Move outdoors, keep the screen awake, retry, or draw the boundary on the map.'):(ne?'भरपर्दो स्थान उपलब्ध छैन। बाहिर जानुहोस् वा नक्सामा सिमाना कोर्नुहोस्।':'A reliable location fix is not available. Move outdoors or draw the boundary on the map.'));stop();},{enableHighAccuracy:true,maximumAge:1000,timeout:20000});
   };
-
-  const start = () => {
-    if (!('geolocation' in navigator)) return setError('This browser does not provide location access. Use Draw corners on the map instead.');
-    setError('');
-    setWatching(true);
-    watchId.current = navigator.geolocation.watchPosition(
-      (position) => {
-        const sample: GeoPoint = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          altitude: position.coords.altitude,
-          timestamp: position.timestamp,
-        };
-        samples.current = [...samples.current.slice(-6), sample];
-        const usable = samples.current.filter((item) => item.accuracy <= Math.max(maximumAccuracy * 2, 60));
-        const source = usable.length ? usable : samples.current;
-        setLatest({
-          lat: median(source.map((item) => item.lat)),
-          lng: median(source.map((item) => item.lng)),
-          accuracy: median(source.map((item) => item.accuracy)),
-          altitude: sample.altitude,
-          timestamp: sample.timestamp,
-        });
-      },
-      (reason) => {
-        setError(reason.code === 1
-          ? 'Location permission was denied. Allow precise location or draw the boundary directly on the map.'
-          : reason.code === 3
-            ? 'Location timed out. Move outdoors, keep the screen awake, retry, or draw the boundary on the map.'
-            : 'A reliable location fix is not available. Move outdoors or draw the boundary on the map.');
-        stop();
-      },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 },
-    );
-  };
-
-  useEffect(() => () => stop(), []);
-
-  const updatePoints = (next: GeoPoint[]) => {
-    setPoints(next);
-    setSaved(false);
-  };
-
-  const addCorner = () => {
-    if (!latest) return notify('Wait for a location fix or use Draw corners on the map.');
-    if (!shouldAcceptPoint(latest, points, maximumAccuracy)) {
-      return notify(latest.accuracy > maximumAccuracy
-        ? `GPS accuracy is ±${formatDecimal(latest.accuracy, 0)} m. Wait until it is within ±${maximumAccuracy} m, raise the limit for a rough estimate, or draw on the map.`
-        : 'This corner is too close to the previous one. Move to the next boundary corner.');
-    }
-    const last = points.at(-1);
-    if (last && haversineDistanceM(last, latest) > 1000) return notify('That GPS jump is unusually large. Wait for the position to settle before recording.');
-    updatePoints([...points, latest]);
-    notify(`Corner ${points.length + 1} added from ${samples.current.length || 1} recent GPS sample${samples.current.length === 1 ? '' : 's'}.`);
-  };
-
-  const title = initialProject?.title ?? `GPS plot · ${new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date())}`;
-
-  const save = () => {
-    if (points.length < 3 || !areaSqFt) return;
-    const ok = onSave({
-      id: crypto.randomUUID(), title, sqFt: areaSqFt, sqM: toSqM(areaSqFt), date: Date.now(), type: 'GPS',
-      tags: [manualPoints ? 'map-drawn' : 'gps', 'field-estimate', confidence.toLowerCase()],
-      source: { geoPoints: points, perimeterFt, gpsAccuracyAverage: averageAccuracy, gpsAccuracyWorst: worstAccuracy, confidence },
-    });
-    setSaved(ok);
-    notify(ok ? 'Boundary project saved on this device.' : 'This browser could not save the boundary project.');
-  };
-
-  const exportProject = (kind: 'geojson' | 'kml' | 'gpx') => {
-    if (points.length < 3) return notify('Add at least three corners before exporting.');
-    const exports = {
-      geojson: [projectToGeoJson(title, points), 'application/geo+json'],
-      kml: [projectToKml(title, points), 'application/vnd.google-earth.kml+xml'],
-      gpx: [projectToGpx(title, points), 'application/gpx+xml'],
-    } as const;
-    download(`napiyo-boundary.${kind}`, exports[kind][0], exports[kind][1]);
-  };
+  useEffect(()=>()=>stop(),[]);
+  const updatePoints=(next:GeoPoint[])=>{setPoints(next);setSaved(false);};
+  const addCorner=()=>{if(!latest)return notify(ne?'स्थान प्राप्त नभएसम्म पर्खनुहोस् वा नक्सामा कुना कोर्नुहोस्।':'Wait for a location fix or use Draw corners on the map.');if(!shouldAcceptPoint(latest,points,maximumAccuracy))return notify(latest.accuracy>maximumAccuracy?(ne?`GPS सटीकता ±${formatDecimal(latest.accuracy,0)} m छ। ±${maximumAccuracy} m भित्र आएपछि कुना सुरक्षित गर्नुहोस्।`:`GPS accuracy is ±${formatDecimal(latest.accuracy,0)} m. Wait until it is within ±${maximumAccuracy} m, raise the limit for a rough estimate, or draw on the map.`):(ne?'यो कुना अघिल्लो कुनासँग धेरै नजिक छ। अर्को कुनामा जानुहोस्।':'This corner is too close to the previous one. Move to the next boundary corner.'));const last=points.at(-1);if(last&&haversineDistanceM(last,latest)>1000)return notify(ne?'GPS स्थान अस्वाभाविक रूपमा टाढा उफ्रियो। स्थिर भएपछि फेरि सुरक्षित गर्नुहोस्।':'That GPS jump is unusually large. Wait for the position to settle before recording.');updatePoints([...points,latest]);notify(ne?`कुना ${points.length+1} GPS बाट थपियो।`:`Corner ${points.length+1} added from ${samples.current.length||1} recent GPS sample${samples.current.length===1?'':'s'}.`);};
+  const title=initialProject?.title??(ne?`GPS जग्गा · ${new Intl.DateTimeFormat('ne-NP',{month:'short',day:'numeric',year:'numeric'}).format(new Date())}`:`GPS plot · ${new Intl.DateTimeFormat('en',{month:'short',day:'numeric',year:'numeric'}).format(new Date())}`);
+  const save=()=>{if(points.length<3||!areaSqFt)return;const ok=onSave({id:crypto.randomUUID(),title,sqFt:areaSqFt,sqM:toSqM(areaSqFt),date:Date.now(),type:'GPS',tags:[manualPoints?'map-drawn':'gps','field-estimate',confidence.toLowerCase()],source:{geoPoints:points,perimeterFt,gpsAccuracyAverage:averageAccuracy,gpsAccuracyWorst:worstAccuracy,confidence}});setSaved(ok);notify(ok?(ne?'सिमाना परियोजना यस उपकरणमा सुरक्षित भयो।':'Boundary project saved on this device.'):(ne?'सिमाना परियोजना सुरक्षित गर्न सकिएन।':'This browser could not save the boundary project.'));};
+  const exportProject=(kind:'geojson'|'kml'|'gpx')=>{if(points.length<3)return notify(ne?'निर्यात गर्नुअघि कम्तीमा तीन कुना थप्नुहोस्।':'Add at least three corners before exporting.');const exports={geojson:[projectToGeoJson(title,points),'application/geo+json'],kml:[projectToKml(title,points),'application/vnd.google-earth.kml+xml'],gpx:[projectToGpx(title,points),'application/gpx+xml']}as const;download(`napiyo-boundary.${kind}`,exports[kind][0],exports[kind][1]);};
+  const confidenceText=ne?(confidence==='HIGH'?'उच्च':confidence==='MEDIUM'?'मध्यम':'कम'):confidence.toLowerCase();
 
   return <div className="page-shell animate-enter !max-w-[96rem]">
-    <header className="page-header max-w-4xl">
-      <p className="eyebrow">Field and map boundary estimate</p>
-      <h1 className="page-title">Record GPS corners or draw directly on the map.</h1>
-      <p className="page-copy">For a field estimate, stand at each corner and record a good GPS fix. For desk planning or poor GPS conditions, move the map, choose Draw corners, tap each corner, and drag markers to refine the shape.</p>
-    </header>
-
-    <div className="grid gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]">
-      <aside className="space-y-4">
-        <section className="panel p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3"><div><p className="section-title">Location signal</p><p className="section-copy">Best used outdoors with precise location enabled.</p></div><span className={`h-3 w-3 rounded-full ${watching ? 'bg-leaf-500 animate-pulse' : 'bg-ink-200'}`} /></div>
-          <button type="button" onClick={watching ? stop : start} className="button-primary focus-ring mt-5 w-full">{watching ? <><Pause size={17}/>Pause location</> : <><Play size={17}/>Start precise location</>}</button>
-          <div className="mt-4 rounded-xl bg-paper-100 p-4" aria-live="polite">
-            <p className="metric-label">Current accuracy</p>
-            <p className={`numeral mt-1 text-3xl font-semibold ${acceptable ? 'text-leaf-700' : 'text-saffron-700'}`}>{latest ? `±${formatDecimal(latest.accuracy, 0)} m` : 'Waiting'}</p>
-            {latest && <p className="mt-1 text-xs text-ink-500">{formatDecimal(latest.lat, 6)}, {formatDecimal(latest.lng, 6)} · median of {samples.current.length || 1} samples</p>}
-          </div>
-          <label className="field-label mt-4" htmlFor="gps-accuracy">Maximum accepted GPS accuracy: ±{maximumAccuracy} m</label>
-          <input id="gps-accuracy" type="range" min="5" max="50" step="1" value={maximumAccuracy} onChange={(event) => setMaximumAccuracy(Number(event.target.value))} className="w-full accent-leaf-700" />
-          <button type="button" onClick={addCorner} disabled={!latest || !acceptable} className="button-secondary focus-ring mt-4 w-full disabled:opacity-45"><MapPin size={17}/>Record GPS corner {points.length + 1}</button>
-          {latest && !acceptable && <p className="mt-3 text-xs leading-5 text-saffron-700">GPS capture is paused because ±{formatDecimal(latest.accuracy, 0)} m exceeds your ±{maximumAccuracy} m limit. Wait outdoors, adjust the limit for a rough estimate, or use Draw corners on the map.</p>}
-          {error && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-800" role="alert">{error}</p>}
-        </section>
-
-        <section className="panel p-5 sm:p-6">
-          <div className="flex items-center justify-between"><div><p className="section-title">Recorded corners</p><p className="section-copy">GPS and map-drawn corners can be edited together.</p></div><strong className="numeral text-2xl text-ink-950">{points.length}</strong></div>
-          {!!points.length && <ol className="mt-4 max-h-52 space-y-2 overflow-y-auto pr-1">{points.map((point, index) => <li key={`${point.timestamp}-${index}`} className="flex items-center justify-between gap-2 rounded-xl bg-paper-100 px-3 py-2 text-xs"><span><strong>Corner {index + 1}</strong> · {point.accuracy > 0 ? `GPS ±${formatDecimal(point.accuracy, 0)} m` : 'map drawn'}{index > 0 ? ` · ${formatDecimal(haversineDistanceM(points[index - 1], point), 1)} m from previous` : ''}</span><button type="button" onClick={() => updatePoints(points.filter((_, pointIndex) => pointIndex !== index))} className="focus-ring rounded-lg p-2 text-red-700" aria-label={`Remove corner ${index + 1}`}><X size={14}/></button></li>)}</ol>}
-          <div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={() => updatePoints(points.slice(0, -1))} disabled={!points.length} className="button-secondary focus-ring"><Undo2 size={16}/>Undo</button><button type="button" onClick={() => updatePoints([])} disabled={!points.length} className="button-secondary focus-ring text-red-700"><Trash2 size={16}/>Clear</button></div>
-          <p className="mt-4 rounded-xl border border-saffron-200 bg-saffron-50 p-3 text-xs leading-5 text-ink-600">GPS and manually drawn boundaries are planning estimates only. Confirm official area and boundaries with cadastral records and a licensed surveyor.</p>
-        </section>
-      </aside>
-
-      <main className="space-y-4">
-        <section className="panel overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4"><div><p className="section-title">Interactive boundary map</p><p className="section-copy">Pan the map, draw corners, or drag numbered markers to correct them.</p></div><Crosshair size={20} className="text-leaf-700"/></div>
-          <GpsMap latest={latest} points={points} onPointsChange={updatePoints} notify={notify}/>
-        </section>
-
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat label="Estimated area" value={`${formatDecimal(areaSqFt)} ft²`} sub={`${formatDecimal(toSqM(areaSqFt))} m²`} />
-          <Stat label="Perimeter" value={`${formatDecimal(perimeterFt)} ft`} sub={`${formatDecimal(perimeterFt / 3.28084)} m`} />
-          <Stat label="GPS accuracy" value={gpsPoints.length ? `±${formatDecimal(averageAccuracy, 1)} m` : '—'} sub={manualPoints ? `${manualPoints} manually drawn corner${manualPoints === 1 ? '' : 's'}` : gpsPoints.length ? `worst ±${formatDecimal(worstAccuracy, 1)} m` : 'Add corners'} />
-          <Stat label="Confidence" value={points.length >= 3 ? confidence.toLowerCase() : '—'} sub={manualPoints ? 'Map drawn · verify carefully' : 'Based on device fixes'} />
-        </section>
-
-        {points.length >= 3 && <section className="panel p-5 sm:p-6"><div className="grid gap-4 lg:grid-cols-2"><div><p className="metric-label">Hill system</p><p className="mt-2 font-semibold leading-6 text-ink-800">{formatHillsWords(areaSqFt)}</p></div><div><p className="metric-label">Terai system</p><p className="mt-2 font-semibold leading-6 text-ink-800">{formatTeraiWords(areaSqFt)}</p></div></div><div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={save} disabled={saved} className="button-primary focus-ring"><Save size={16}/>{saved ? 'Saved' : initialProject ? 'Save updated copy' : 'Save project'}</button>{(['geojson','kml','gpx'] as const).map((kind) => <button key={kind} type="button" onClick={() => exportProject(kind)} className="button-secondary focus-ring"><Download size={16}/>{kind.toUpperCase()}</button>)}</div></section>}
-      </main>
-    </div>
+    <header className="page-header max-w-4xl"><p className="eyebrow">{ne?'फिल्ड र नक्सा सिमाना अनुमान':'Field and map boundary estimate'}</p><h1 className="page-title">{ne?'GPS कुना सुरक्षित गर्नुहोस् वा नक्सामा सिधै कोर्नुहोस्।':'Record GPS corners or draw directly on the map.'}</h1><p className="page-copy">{ne?'फिल्ड अनुमानका लागि प्रत्येक कुनामा उभिएर राम्रो GPS स्थान सुरक्षित गर्नुहोस्। GPS कमजोर भए नक्सा सारेर कुना कोर्नुहोस् र मार्कर तानेर मिलाउनुहोस्।':'For a field estimate, stand at each corner and record a good GPS fix. For desk planning or poor GPS conditions, move the map, choose Draw corners, tap each corner, and drag markers to refine the shape.'}</p></header>
+    <div className="grid gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]"><aside className="space-y-4">
+      <section className="panel p-5 sm:p-6"><div className="flex items-center justify-between gap-3"><div><p className="section-title">{ne?'स्थान संकेत':'Location signal'}</p><p className="section-copy">{ne?'सटीक स्थान खुला राखेर बाहिर प्रयोग गर्दा राम्रो हुन्छ।':'Best used outdoors with precise location enabled.'}</p></div><span className={`h-3 w-3 rounded-full ${watching?'bg-leaf-500 animate-pulse':'bg-ink-200'}`}/></div><button type="button" onClick={watching?stop:start} className="button-primary focus-ring mt-5 w-full">{watching?<><Pause size={17}/>{ne?'स्थान रोक्नुहोस्':'Pause location'}</>:<><Play size={17}/>{ne?'सटीक स्थान सुरु':'Start precise location'}</>}</button><div className="mt-4 rounded-lg bg-paper-100 p-4" aria-live="polite"><p className="metric-label">{ne?'हालको सटीकता':'Current accuracy'}</p><p className={`numeral mt-1 text-3xl font-semibold ${acceptable?'text-leaf-700':'text-saffron-700'}`}>{latest?`±${formatDecimal(latest.accuracy,0)} m`:(ne?'पर्खँदै':'Waiting')}</p>{latest&&<p className="mt-1 text-xs text-ink-500">{formatDecimal(latest.lat,6)}, {formatDecimal(latest.lng,6)} · {ne?`${samples.current.length||1} नमुनाको मध्य मान`:`median of ${samples.current.length||1} samples`}</p>}</div><label className="field-label mt-4" htmlFor="gps-accuracy">{ne?'स्वीकार्य अधिकतम GPS सटीकता':'Maximum accepted GPS accuracy'}: ±{maximumAccuracy} m</label><input id="gps-accuracy" type="range" min="5" max="50" step="1" value={maximumAccuracy} onChange={event=>setMaximumAccuracy(Number(event.target.value))} className="w-full accent-leaf-700"/><button type="button" onClick={addCorner} disabled={!latest||!acceptable} className="button-secondary focus-ring mt-4 w-full disabled:opacity-45"><MapPin size={17}/>{ne?`GPS कुना ${points.length+1} सुरक्षित`:`Record GPS corner ${points.length+1}`}</button>{latest&&!acceptable&&<p className="mt-3 text-xs leading-5 text-saffron-700">{ne?`±${formatDecimal(latest.accuracy,0)} m तपाईंको ±${maximumAccuracy} m सीमाभन्दा बढी भएकाले GPS सुरक्षित गर्न रोकिएको छ।`:`GPS capture is paused because ±${formatDecimal(latest.accuracy,0)} m exceeds your ±${maximumAccuracy} m limit.`}</p>}{error&&<p className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-800" role="alert">{error}</p>}</section>
+      <section className="panel p-5 sm:p-6"><div className="flex items-center justify-between"><div><p className="section-title">{ne?'सुरक्षित कुना':'Recorded corners'}</p><p className="section-copy">{ne?'GPS र नक्सामा कोरिएका कुना सँगै सम्पादन गर्न सकिन्छ।':'GPS and map-drawn corners can be edited together.'}</p></div><strong className="numeral text-2xl text-ink-950">{points.length}</strong></div>{!!points.length&&<ol className="mt-4 max-h-52 space-y-2 overflow-y-auto pr-1">{points.map((point,index)=><li key={`${point.timestamp}-${index}`} className="flex items-center justify-between gap-2 rounded-lg bg-paper-100 px-3 py-2 text-xs"><span><strong>{ne?'कुना':'Corner'} {index+1}</strong> · {point.accuracy>0?`GPS ±${formatDecimal(point.accuracy,0)} m`:(ne?'नक्सामा कोरिएको':'map drawn')}{index>0?` · ${formatDecimal(haversineDistanceM(points[index-1],point),1)} m ${ne?'अघिल्लोबाट':'from previous'}`:''}</span><button type="button" onClick={()=>updatePoints(points.filter((_,pointIndex)=>pointIndex!==index))} className="focus-ring rounded-lg p-2 text-red-700" aria-label={ne?`कुना ${index+1} हटाउनुहोस्`:`Remove corner ${index+1}`}><X size={14}/></button></li>)}</ol>}<div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={()=>updatePoints(points.slice(0,-1))} disabled={!points.length} className="button-secondary focus-ring"><Undo2 size={16}/>{ne?'पछाडि':'Undo'}</button><button type="button" onClick={()=>updatePoints([])} disabled={!points.length} className="button-secondary focus-ring text-red-700"><Trash2 size={16}/>{ne?'खाली':'Clear'}</button></div><p className="mt-4 rounded-lg border border-saffron-200 bg-saffron-50 p-3 text-xs leading-5 text-ink-600">{ne?'GPS र नक्सामा कोरिएका सिमाना योजना अनुमान मात्र हुन्। आधिकारिक क्षेत्रफल र सिमाना नापी अभिलेख तथा इजाजतप्राप्त नापी प्राविधिकबाट पुष्टि गर्नुहोस्।':'GPS and manually drawn boundaries are planning estimates only. Confirm official area and boundaries with cadastral records and a licensed surveyor.'}</p></section>
+    </aside><main className="space-y-4"><section className="panel overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4"><div><p className="section-title">{ne?'अन्तरक्रियात्मक सिमाना नक्सा':'Interactive boundary map'}</p><p className="section-copy">{ne?'नक्सा सार्नुहोस्, कुना कोर्नुहोस् वा नम्बर भएका मार्कर तानेर मिलाउनुहोस्।':'Pan the map, draw corners, or drag numbered markers to correct them.'}</p></div><Crosshair size={20} className="text-leaf-700"/></div><GpsMap latest={latest} points={points} onPointsChange={updatePoints} notify={notify}/></section>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Stat label={ne?'अनुमानित क्षेत्रफल':'Estimated area'} value={`${formatDecimal(areaSqFt)} ft²`} sub={`${formatDecimal(toSqM(areaSqFt))} m²`}/><Stat label={ne?'परिधि':'Perimeter'} value={`${formatDecimal(perimeterFt)} ft`} sub={`${formatDecimal(perimeterFt/3.28084)} m`}/><Stat label={ne?'GPS सटीकता':'GPS accuracy'} value={gpsPoints.length?`±${formatDecimal(averageAccuracy,1)} m`:'—'} sub={manualPoints?`${manualPoints} ${ne?'नक्सामा कोरिएका कुना':'manually drawn corners'}`:gpsPoints.length?`${ne?'सबैभन्दा कमजोर':'worst'} ±${formatDecimal(worstAccuracy,1)} m`:(ne?'कुना थप्नुहोस्':'Add corners')}/><Stat label={ne?'विश्वसनीयता':'Confidence'} value={points.length>=3?confidenceText:'—'} sub={manualPoints?(ne?'नक्सामा कोरिएको · सावधानीपूर्वक पुष्टि गर्नुहोस्':'Map drawn · verify carefully'):(ne?'उपकरणको स्थानमा आधारित':'Based on device fixes')}/></section>
+      {points.length>=3&&<section className="panel p-5 sm:p-6"><div className="grid gap-4 lg:grid-cols-2"><div><p className="metric-label">{ne?'पहाडी प्रणाली':'Hill system'}</p><p className="mt-2 font-semibold leading-6 text-ink-800">{formatHillsWords(areaSqFt)}</p></div><div><p className="metric-label">{ne?'तराई प्रणाली':'Terai system'}</p><p className="mt-2 font-semibold leading-6 text-ink-800">{formatTeraiWords(areaSqFt)}</p></div></div><div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={save} disabled={saved} className="button-primary focus-ring"><Save size={16}/>{saved?(ne?'सुरक्षित':'Saved'):initialProject?(ne?'सम्पादित प्रतिलिपि सुरक्षित':'Save updated copy'):(ne?'परियोजना सुरक्षित':'Save project')}</button>{(['geojson','kml','gpx']as const).map(kind=><button key={kind} type="button" onClick={()=>exportProject(kind)} className="button-secondary focus-ring"><Download size={16}/>{kind.toUpperCase()}</button>)}</div></section>}
+    </main></div>
   </div>;
 };
-
-const Stat = ({ label, value, sub }: { label: string; value: string; sub: string }) => <div className="panel p-4"><p className="metric-label">{label}</p><p className="numeral mt-2 text-xl font-semibold capitalize text-ink-950">{value}</p><p className="mt-1 text-xs text-ink-500">{sub}</p></div>;
-
+const Stat=({label,value,sub}:{label:string;value:string;sub:string})=><div className="panel p-4"><p className="metric-label">{label}</p><p className="numeral mt-2 text-xl font-semibold capitalize text-ink-950">{value}</p><p className="mt-1 text-xs text-ink-500">{sub}</p></div>;
 export default GpsMeasureScreen;
