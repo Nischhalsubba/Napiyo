@@ -16,6 +16,7 @@
     "check": "tsc --noEmit",
     "test": "npm run prepare:seo && vitest run",
     "test:watch": "npm run prepare:seo && vitest",
+    "test:e2e": "playwright test",
     "build": "npm run check && npm run test && vite build",
     "build:cloudflare": "npm run check && npm run test && vite build",
     "verify": "npm run build:cloudflare",
@@ -27,6 +28,7 @@
     "react-dom": "19.2.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.54.2",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.13.3",
     "@types/react": "19.2.17",
