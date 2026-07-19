@@ -6,6 +6,7 @@ import {
   getTeraiBreakdown,
   normalizeDigits,
   parseSmartArea,
+  polygonSelfIntersects,
   toSqFt,
 } from '../utils/conversions';
 
@@ -53,5 +54,11 @@ describe('normalization and geometry', () => {
     const rectangle = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 5 }, { x: 0, y: 5 }];
     expect(calculatePolygonAreaPx(rectangle)).toBe(50);
     expect(calculatePolygonPerimeterPx(rectangle)).toBe(30);
+    expect(polygonSelfIntersects(rectangle)).toBe(false);
+  });
+
+  it('detects a crossing bow-tie polygon', () => {
+    const crossing = [{ x: 0, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }, { x: 10, y: 0 }];
+    expect(polygonSelfIntersects(crossing)).toBe(true);
   });
 });
