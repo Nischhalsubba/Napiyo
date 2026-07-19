@@ -13,6 +13,9 @@ const VIEW_HEIGHT = 640;
 const MIN_ZOOM = 7;
 const MAX_ZOOM = 20;
 const NEPAL_CENTER = { lat: 28.25, lng: 84.0 };
+const PRIMARY = '#003893';
+const PRIMARY_LIGHT = 'rgba(0,56,147,.18)';
+const ACCENT = '#dc143c';
 
 const GpsMap = ({ latest, points }: Props) => {
   const [zoom, setZoom] = useState(8);
@@ -58,7 +61,7 @@ const GpsMap = ({ latest, points }: Props) => {
   const path = map.projectedPoints.map((point) => `${point.x},${point.y}`).join(' ');
   const accuracyRadius = latest ? Math.max(6, Math.min(180, latest.accuracy / metresPerPixel(latest.lat, effectiveZoom))) : 0;
 
-  return <div className="relative min-h-[380px] overflow-hidden bg-[#dce6e1] sm:min-h-[520px]" role="region" aria-label="OpenStreetMap showing current GPS position and recorded plot corners">
+  return <div className="relative min-h-[380px] overflow-hidden bg-paper-200 sm:min-h-[520px]" role="region" aria-label="OpenStreetMap showing current GPS position and recorded plot corners">
     <div className="absolute left-3 top-3 z-20 flex flex-col overflow-hidden rounded-xl border border-paper-300 bg-white shadow-card">
       <button type="button" onClick={() => setZoom((value) => Math.min(MAX_ZOOM, (hasFix && value < 16 ? 18 : value) + 1))} disabled={effectiveZoom >= MAX_ZOOM} className="focus-ring flex h-11 w-11 items-center justify-center border-b border-paper-200 text-ink-700 disabled:opacity-35" aria-label="Zoom map in"><Plus size={18}/></button>
       <button type="button" onClick={() => setZoom((value) => Math.max(MIN_ZOOM, (hasFix && value < 16 ? 18 : value) - 1))} disabled={effectiveZoom <= MIN_ZOOM} className="focus-ring flex h-11 w-11 items-center justify-center border-b border-paper-200 text-ink-700 disabled:opacity-35" aria-label="Zoom map out"><Minus size={18}/></button>
@@ -70,17 +73,17 @@ const GpsMap = ({ latest, points }: Props) => {
         ? <div key={tile.key} className="absolute bg-paper-200" style={{ left: tile.left, top: tile.top, width: WEB_MERCATOR_TILE_SIZE, height: WEB_MERCATOR_TILE_SIZE }}/>
         : <img key={tile.key} src={tile.src} alt="" width={WEB_MERCATOR_TILE_SIZE} height={WEB_MERCATOR_TILE_SIZE} draggable={false} loading="eager" referrerPolicy="no-referrer" onError={() => setFailedTiles((current) => new Set(current).add(tile.key))} className="absolute max-w-none select-none" style={{ left: tile.left, top: tile.top, width: WEB_MERCATOR_TILE_SIZE, height: WEB_MERCATOR_TILE_SIZE }}/>) }
       <svg viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} className="pointer-events-none absolute inset-0 h-full w-full">
-        {latest && map.projectedLatest && <circle cx={map.projectedLatest.x} cy={map.projectedLatest.y} r={accuracyRadius} fill="rgba(14,165,233,.14)" stroke="rgba(2,132,199,.45)" strokeWidth="2"/>}
-        {map.projectedPoints.length >= 2 && <polyline points={path} fill={map.projectedPoints.length >= 3 ? 'rgba(16,185,129,.22)' : 'none'} stroke="#047857" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round"/>}
-        {map.projectedPoints.length >= 3 && <line x1={map.projectedPoints.at(-1)?.x} y1={map.projectedPoints.at(-1)?.y} x2={map.projectedPoints[0].x} y2={map.projectedPoints[0].y} stroke="#047857" strokeWidth="5" strokeLinejoin="round"/>}
-        {map.projectedPoints.map((point, index) => <g key={index}><circle cx={point.x} cy={point.y} r="12" fill="#047857" stroke="white" strokeWidth="4"/><text x={point.x} y={point.y + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill="white">{index + 1}</text></g>)}
-        {latest && map.projectedLatest && <g><circle cx={map.projectedLatest.x} cy={map.projectedLatest.y} r="10" fill="#0284c7" stroke="white" strokeWidth="4"/><circle cx={map.projectedLatest.x} cy={map.projectedLatest.y} r="3" fill="white"/></g>}
+        {latest && map.projectedLatest && <circle cx={map.projectedLatest.x} cy={map.projectedLatest.y} r={accuracyRadius} fill="rgba(220,20,60,.12)" stroke="rgba(169,14,45,.55)" strokeWidth="2"/>}
+        {map.projectedPoints.length >= 2 && <polyline points={path} fill={map.projectedPoints.length >= 3 ? PRIMARY_LIGHT : 'none'} stroke={PRIMARY} strokeWidth="5" strokeLinejoin="round" strokeLinecap="round"/>}
+        {map.projectedPoints.length >= 3 && <line x1={map.projectedPoints.at(-1)?.x} y1={map.projectedPoints.at(-1)?.y} x2={map.projectedPoints[0].x} y2={map.projectedPoints[0].y} stroke={PRIMARY} strokeWidth="5" strokeLinejoin="round"/>}
+        {map.projectedPoints.map((point, index) => <g key={index}><circle cx={point.x} cy={point.y} r="12" fill={PRIMARY} stroke="white" strokeWidth="4"/><text x={point.x} y={point.y + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill="white">{index + 1}</text></g>)}
+        {latest && map.projectedLatest && <g><circle cx={map.projectedLatest.x} cy={map.projectedLatest.y} r="10" fill={ACCENT} stroke="white" strokeWidth="4"/><circle cx={map.projectedLatest.x} cy={map.projectedLatest.y} r="3" fill="white"/></g>}
       </svg>
     </div>
 
-    {!hasFix && <div className="absolute left-1/2 top-5 z-20 -translate-x-1/2 rounded-xl bg-white/94 px-4 py-2 text-center text-xs font-semibold text-ink-700 shadow-card backdrop-blur-sm"><LocateFixed className="mr-1 inline" size={14}/>Nepal overview · enable location to center on your plot</div>}
+    {!hasFix && <div className="absolute left-1/2 top-5 z-20 -translate-x-1/2 rounded-xl bg-white/94 px-4 py-2 text-center text-xs font-semibold text-ink-700 shadow-card backdrop-blur-sm"><LocateFixed className="mr-1 inline text-leaf-700" size={14}/>Nepal overview · enable location to center on your plot</div>}
     <div className="absolute inset-x-0 bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 bg-white/92 px-3 py-2 text-[11px] text-ink-600 backdrop-blur-sm">
-      <span>{hasFix ? 'Blue dot: current fix · numbered dots: saved corners' : 'Online map tiles reveal the approximate viewed area to OpenStreetMap.'}</span>
+      <span>{hasFix ? 'Crimson dot: current fix · numbered blue dots: saved corners' : 'Online map tiles reveal the approximate viewed area to OpenStreetMap.'}</span>
       <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="focus-ring inline-flex items-center gap-1 font-semibold text-leaf-800">© OpenStreetMap contributors <ExternalLink size={11}/></a>
     </div>
   </div>;
@@ -88,12 +91,12 @@ const GpsMap = ({ latest, points }: Props) => {
 
 const FallbackPreview = ({ points, onRetry, privacyMode = false }: { points: GeoPoint[]; onRetry: () => void; privacyMode?: boolean }) => {
   const local = toLocalMetres(points);
-  if (!local.length) return <div className="flex min-h-[380px] flex-col items-center justify-center bg-[#eef2ee] px-6 text-center text-ink-500 sm:min-h-[520px]"><EyeOff size={40}/><p className="mt-3 text-sm font-semibold">Private outline mode</p><p className="mt-1 max-w-sm text-xs leading-5">No external map tiles are requested. Start location and record corners to see a local-only shape preview.</p><button type="button" onClick={onRetry} className="button-secondary focus-ring mt-4"><Eye size={16}/>Show online map</button></div>;
+  if (!local.length) return <div className="flex min-h-[380px] flex-col items-center justify-center bg-paper-200 px-6 text-center text-ink-500 sm:min-h-[520px]"><EyeOff className="text-leaf-700" size={40}/><p className="mt-3 text-sm font-semibold">Private outline mode</p><p className="mt-1 max-w-sm text-xs leading-5">No external map tiles are requested. Start location and record corners to see a local-only shape preview.</p><button type="button" onClick={onRetry} className="button-secondary focus-ring mt-4"><Eye size={16}/>Show online map</button></div>;
   const xs = local.map((point) => point.x), ys = local.map((point) => point.y);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const width = Math.max(maxX - minX, 1), height = Math.max(maxY - minY, 1);
   const normalized = local.map((point) => ({ x: 60 + ((point.x - minX) / width) * 880, y: 60 + ((maxY - point.y) / height) * 500 }));
-  return <div className="relative min-h-[380px] bg-[#eef2ee] p-4 sm:min-h-[520px]"><svg viewBox="0 0 1000 620" className="h-full min-h-[350px] w-full" role="img" aria-label={`Private GPS polygon with ${points.length} recorded corners`}><defs><pattern id="gps-fallback-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d5ded9" strokeWidth="1"/></pattern></defs><rect width="1000" height="620" rx="24" fill="url(#gps-fallback-grid)"/><path d={`M ${normalized.map((point) => `${point.x},${point.y}`).join(' L ')} ${points.length >= 3 ? 'Z' : ''}`} fill={points.length >= 3 ? 'rgba(16,185,129,.2)' : 'none'} stroke="#0f766e" strokeWidth="6" strokeLinejoin="round"/>{normalized.map((point, index) => <g key={index}><circle cx={point.x} cy={point.y} r="13" fill="#0f766e" stroke="white" strokeWidth="5"/><text x={point.x} y={point.y - 22} textAnchor="middle" fontSize="20" fontWeight="700" fill="#0f172a">{index + 1}</text></g>)}</svg><div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3 rounded-xl bg-white/95 p-3 text-xs shadow-card"><span>{privacyMode ? 'Private outline mode. No map tiles are requested.' : 'Map tiles are unavailable; showing the recorded shape.'}</span><button type="button" onClick={onRetry} className="button-secondary focus-ring"><Eye size={15}/>Show map</button></div></div>;
+  return <div className="relative min-h-[380px] bg-paper-200 p-4 sm:min-h-[520px]"><svg viewBox="0 0 1000 620" className="h-full min-h-[350px] w-full" role="img" aria-label={`Private GPS polygon with ${points.length} recorded corners`}><defs><pattern id="gps-fallback-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#b8c0cc" strokeWidth="1"/></pattern></defs><rect width="1000" height="620" rx="24" fill="url(#gps-fallback-grid)"/><path d={`M ${normalized.map((point) => `${point.x},${point.y}`).join(' L ')} ${points.length >= 3 ? 'Z' : ''}`} fill={points.length >= 3 ? PRIMARY_LIGHT : 'none'} stroke={PRIMARY} strokeWidth="6" strokeLinejoin="round"/>{normalized.map((point, index) => <g key={index}><circle cx={point.x} cy={point.y} r="13" fill={PRIMARY} stroke="white" strokeWidth="5"/><text x={point.x} y={point.y - 22} textAnchor="middle" fontSize="20" fontWeight="700" fill="#171a21">{index + 1}</text></g>)}</svg><div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3 rounded-xl bg-white/95 p-3 text-xs shadow-card"><span>{privacyMode ? 'Private outline mode. No map tiles are requested.' : 'Map tiles are unavailable; showing the recorded shape.'}</span><button type="button" onClick={onRetry} className="button-secondary focus-ring"><Eye size={15}/>Show map</button></div></div>;
 };
 
 export default GpsMap;
