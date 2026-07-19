@@ -6,6 +6,7 @@ const WEB_MERCATOR_MAX_LAT = 85.05112878;
 export const WEB_MERCATOR_TILE_SIZE = 256;
 
 const radians = (degrees: number) => degrees * Math.PI / 180;
+const degrees = (radiansValue: number) => radiansValue * 180 / Math.PI;
 
 export const haversineDistanceM = (first: GeoPoint, second: GeoPoint): number => {
   const lat1 = radians(first.lat);
@@ -63,6 +64,17 @@ export const projectGeoToWorldPixels = (point: Pick<GeoPoint, 'lat' | 'lng'>, zo
   return {
     x: ((point.lng + 180) / 360) * scale,
     y: (0.5 - Math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * Math.PI)) * scale,
+  };
+};
+
+export const projectWorldPixelsToGeo = (point: { x: number; y: number }, zoom: number) => {
+  const scale = WEB_MERCATOR_TILE_SIZE * 2 ** zoom;
+  const lng = (point.x / scale) * 360 - 180;
+  const mercatorY = 0.5 - point.y / scale;
+  const lat = degrees(Math.atan(Math.sinh(mercatorY * 2 * Math.PI)));
+  return {
+    lat: Math.max(-WEB_MERCATOR_MAX_LAT, Math.min(WEB_MERCATOR_MAX_LAT, lat)),
+    lng: ((lng + 540) % 360) - 180,
   };
 };
 
