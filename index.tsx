@@ -5,6 +5,7 @@ import './index.css';
 import './accessibility.css';
 import './dark-contrast.css';
 import './nepali-theme.css';
+import './product-redesign.css';
 
 const rootElement = document.getElementById('root');
 
