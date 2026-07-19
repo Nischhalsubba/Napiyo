@@ -5,8 +5,8 @@
   "start_url": "/#convert",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f4f9ff",
-  "theme_color": "#0ea5e9",
+  "background_color": "#FAFAF8",
+  "theme_color": "#003893",
   "orientation": "any",
   "categories": ["utilities", "productivity", "education"],
   "icons": [
