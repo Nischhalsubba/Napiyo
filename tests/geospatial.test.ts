@@ -8,6 +8,7 @@ import {
   polygonAreaSqM,
   polygonPerimeterM,
   projectGeoToWorldPixels,
+  projectWorldPixelsToGeo,
   projectToGeoJson,
   projectToGpx,
   projectToKml,
@@ -54,6 +55,14 @@ describe('GPS geometry', () => {
     expect(Number.isFinite(kathmandu.x)).toBe(true);
     expect(Number.isFinite(kathmandu.y)).toBe(true);
     expect(metresPerPixel(27.7, 18)).toBeGreaterThan(0);
+  });
+
+  it('reverses map pixels back into geographic coordinates', () => {
+    const source = point(26.463704, 87.274993);
+    const pixels = projectGeoToWorldPixels(source, 18);
+    const restored = projectWorldPixelsToGeo(pixels, 18);
+    expect(restored.lat).toBeCloseTo(source.lat, 6);
+    expect(restored.lng).toBeCloseTo(source.lng, 6);
   });
 });
 
