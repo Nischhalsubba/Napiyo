@@ -6,10 +6,27 @@
   X-Frame-Options: DENY
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; manifest-src 'self'; worker-src 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-I6iGXos60QPHcVNAJyV9WZtoulvTCO57vcMXuRhfnHM='; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; manifest-src 'self'; worker-src 'self'
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+/napiyo-social-preview-v1.png
+  Cache-Control: public, max-age=31536000, immutable
+  Cross-Origin-Resource-Policy: cross-origin
+
+/napiyo-icon.svg
+  Cache-Control: public, max-age=86400
+  Cross-Origin-Resource-Policy: cross-origin
+
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+
+/llms.txt
+  Cache-Control: public, max-age=3600
 
 /sw.js
   Cache-Control: no-cache
