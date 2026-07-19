@@ -41,7 +41,7 @@ describe('safe output encoding', () => {
   });
 
   it('neutralizes spreadsheet formulas', () => {
-    expect(safeCsvCell('=HYPERLINK("https://evil.invalid")')).toStartWith('"\'');
+    expect(safeCsvCell('=HYPERLINK("https://evil.invalid")').startsWith('"\'')).toBe(true);
     expect(safeCsvCell('Normal title')).toBe('"Normal title"');
   });
 
