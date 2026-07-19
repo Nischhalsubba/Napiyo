@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 import './accessibility.css';
+import './dark-contrast.css';
 
 const rootElement = document.getElementById('root');
 
