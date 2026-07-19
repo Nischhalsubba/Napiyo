@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  verify-cloudflare-pages:
+  verify-cloudflare-workers:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -26,12 +26,13 @@ jobs:
           cache-dependency-path: package.json
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Typecheck, test, and build Cloudflare Pages output
+      - name: Typecheck, test, and build Cloudflare output
         run: npm run build:cloudflare
-      - name: Verify Pages artifacts
+      - name: Verify Workers static assets
         run: |
           test -f dist/index.html
           test -f dist/_headers
-          test -f dist/_redirects
           test -f dist/manifest.webmanifest
           test -f dist/sw.js
+          test -f wrangler.jsonc
+          test ! -e dist/_redirects
