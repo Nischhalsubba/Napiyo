@@ -18,6 +18,7 @@ export const recognitionErrorMessage = (error: string, language: SpeechLanguage)
   if (error === 'no-speech') return nepali
     ? 'आवाज सुनिएन। माइक्रोफोन नजिक स्पष्ट रूपमा फेरि बोल्नुहोस्।'
     : 'No speech was detected. Speak clearly near the microphone and try again.';
+  if (error === 'aborted') return nepali ? 'आवाज इनपुट रोकियो।' : 'Voice input stopped.';
   if (error === 'language-not-supported') return nepali
     ? 'यो ब्राउजरमा नेपाली आवाज पहिचान उपलब्ध छैन। Chrome वा Android प्रयोग गर्नुहोस्।'
     : 'This browser does not support the selected speech language.';
@@ -37,7 +38,62 @@ export const chooseSpeechVoice = <T extends VoiceLike>(voices: T[], language: Sp
     const prefix = normalized.find(({ lang }) => lang.startsWith(`${preference}-`));
     if (prefix) return prefix.voice;
   }
-  return normalized.find(({ voice }) => voice.default)?.voice;
+  return normalized.find(({ voice }) => voice.default)?.voice ?? voices[0];
+};
+
+export const waitForSpeechVoices = async (synthesis: SpeechSynthesis, timeoutMs = 1200): Promise<SpeechSynthesisVoice[]> => {
+  const immediate = synthesis.getVoices();
+  if (immediate.length > 0) return immediate;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      synthesis.removeEventListener?.('voiceschanged', finish);
+      resolve(synthesis.getVoices());
+    };
+    synthesis.addEventListener?.('voiceschanged', finish, { once: true });
+    window.setTimeout(finish, timeoutMs);
+  });
+};
+
+export const speakText = async ({
+  text,
+  language,
+  onStart,
+  onEnd,
+  onError,
+}: {
+  text: string;
+  language: SpeechLanguage;
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: () => void;
+}) => {
+  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return false;
+  const synthesis = window.speechSynthesis;
+  synthesis.cancel();
+  synthesis.resume();
+
+  const voices = await waitForSpeechVoices(synthesis);
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = language;
+  utterance.rate = language === 'ne-NP' ? 0.78 : 0.9;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  const voice = chooseSpeechVoice(voices, language);
+  if (voice) utterance.voice = voice;
+  utterance.onstart = () => onStart?.();
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = () => onError?.();
+
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 60));
+  synthesis.speak(utterance);
+  window.setTimeout(() => {
+    if (synthesis.paused) synthesis.resume();
+  }, 180);
+  return true;
 };
 
 export const buildSpokenConversion = ({
