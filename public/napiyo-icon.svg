@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Napiyo land tools">
   <defs>
-    <linearGradient id="g" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0ea5e9"/>
-      <stop offset="0.55" stop-color="#06b6d4"/>
-      <stop offset="1" stop-color="#10b981"/>
+    <linearGradient id="g" x1="70" y1="56" x2="430" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#003893"/>
+      <stop offset="0.72" stop-color="#002B73"/>
+      <stop offset="0.72" stop-color="#DC143C"/>
+      <stop offset="1" stop-color="#A90E2D"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#g)"/>
