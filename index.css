@@ -111,6 +111,11 @@ button:not(:disabled), [role='button']:not([aria-disabled='true']) { cursor: poi
 .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #67a9c5; background-clip: padding-box; }
 @keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .animate-enter { animation: enter 220ms ease-out both; }
+.large-text { font-size: 112.5%; }
+.high-contrast body { background: #fff; }
+.high-contrast .panel, .high-contrast .surface-card { border-color: #60718b; background: #fff; box-shadow: none; }
+.high-contrast .page-copy, .high-contrast .section-copy, .high-contrast .text-ink-500 { color: #364761 !important; }
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 @media (min-width: 640px) { .page-shell { padding-inline: 1.5rem; padding-top: 1.6rem; } .panel-header { padding: 1.35rem 1.5rem 1rem; } .panel-body { padding: 1.5rem; } }
 @media (min-width: 1024px) { .page-shell { padding: 1.35rem 2rem 1.6rem; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
