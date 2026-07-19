@@ -1,4 +1,5 @@
 import { SavedItem } from '../types';
+import { isSafeSavedItem, normalizeSafeItems } from '../utils/security';
 
 const STORAGE_KEY = 'napiyo:saved-items:v3';
 const PREVIOUS_KEYS = ['napiyo:saved-items:v2', 'hamrotools:napiyo:v1'];
@@ -11,26 +12,8 @@ interface StorageSchema {
   items: SavedItem[];
 }
 
-const validTypes = new Set(['CONVERTED', 'MEASURED', 'GPS', 'PLANNED']);
-
-export const isSavedItem = (value: unknown): value is SavedItem => {
-  if (!value || typeof value !== 'object') return false;
-  const item = value as Partial<SavedItem>;
-  return typeof item.id === 'string'
-    && typeof item.title === 'string'
-    && typeof item.sqFt === 'number'
-    && Number.isFinite(item.sqFt)
-    && typeof item.date === 'number'
-    && validTypes.has(String(item.type));
-};
-
-export const normalizeItems = (items: unknown[]): SavedItem[] => items
-  .filter(isSavedItem)
-  .map((item) => ({
-    ...item,
-    sqM: typeof item.sqM === 'number' ? item.sqM : item.sqFt * 0.09290304,
-    tags: Array.isArray(item.tags) ? item.tags.filter((tag): tag is string => typeof tag === 'string') : [],
-  }));
+export const isSavedItem = isSafeSavedItem;
+export const normalizeItems = normalizeSafeItems;
 
 const readLocal = (): SavedItem[] => {
   try {
@@ -92,7 +75,11 @@ export const hydrateItems = async (): Promise<SavedItem[]> => {
   const local = readLocal();
   try {
     const indexed = await readIndexedDb();
-    if (indexed.length) return indexed;
+    if (indexed.length) {
+      const merged = normalizeItems([...indexed, ...local].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index));
+      if (merged.length !== indexed.length) await writeIndexedDb(merged);
+      return merged;
+    }
     if (local.length) await writeIndexedDb(local);
   } catch (error) {
     console.warn('Napiyo is using localStorage because IndexedDB is unavailable.', error);
@@ -101,14 +88,32 @@ export const hydrateItems = async (): Promise<SavedItem[]> => {
 };
 
 export const saveItems = (items: SavedItem[]): boolean => {
+  const safeItems = normalizeItems(items);
   try {
-    const payload: StorageSchema = { version: 3, items };
+    const payload: StorageSchema = { version: 3, items: safeItems };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    void writeIndexedDb(items).catch((error) => console.warn('IndexedDB mirror failed.', error));
+    void writeIndexedDb(safeItems).catch((error) => console.warn('IndexedDB mirror failed.', error));
     return true;
   } catch (error) {
     console.error('Napiyo could not save projects.', error);
-    void writeIndexedDb(items).catch(() => undefined);
+    void writeIndexedDb(safeItems).catch(() => undefined);
     return false;
+  }
+};
+
+export const clearItems = async (): Promise<void> => {
+  localStorage.removeItem(STORAGE_KEY);
+  PREVIOUS_KEYS.forEach((key) => localStorage.removeItem(key));
+  try {
+    const database = await openDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(STORE_NAME, 'readwrite');
+      transaction.objectStore(STORE_NAME).delete('projects');
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB delete failed'));
+    });
+    database.close();
+  } catch (error) {
+    console.warn('Napiyo could not clear IndexedDB.', error);
   }
 };
