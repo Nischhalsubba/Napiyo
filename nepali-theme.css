@@ -2,17 +2,6 @@
   position: relative;
 }
 
-.converter-page::before {
-  content: "";
-  position: fixed;
-  inset: 4rem 0 auto;
-  height: 0.28rem;
-  pointer-events: none;
-  background: linear-gradient(90deg, var(--color-primary) 0 78%, var(--color-accent) 78% 100%);
-  opacity: 0.92;
-  z-index: 2;
-}
-
 .nepali-hero {
   position: relative;
   display: grid;
@@ -162,6 +151,28 @@
 
 .nepal-result-card {
   border: 1px solid color-mix(in srgb, var(--color-primary) 70%, #001236);
+  color: #ffffff;
+}
+
+/*
+ * Result breakdowns use explicit colors instead of inherited utility tokens.
+ * This prevents dark-mode remapping from creating pale text on pale panels.
+ */
+.nepal-result-card .bg-ink-900\/90 {
+  background: #101a2f !important;
+  color: #ffffff !important;
+}
+
+.nepal-result-card .bg-ink-900\/90 .text-leaf-300 {
+  color: #b7ceff !important;
+}
+
+.nepal-result-card .bg-ink-900\/90 .text-white {
+  color: #ffffff !important;
+}
+
+.nepal-result-card .bg-ink-900\/90 .text-ink-300 {
+  color: #d7e4ff !important;
 }
 
 .nepal-result-card::after,
@@ -192,13 +203,24 @@ html.dark .voice-console {
   background: linear-gradient(135deg, #172541, var(--color-surface));
 }
 
+html.dark .nepal-result-card .bg-ink-900\/90 {
+  background: #111827 !important;
+}
+
+html.dark .nepal-result-card .bg-ink-900\/90 .text-leaf-300 {
+  color: #b7ceff !important;
+}
+
+html.dark .nepal-result-card .bg-ink-900\/90 .text-ink-300 {
+  color: #cbd5e1 !important;
+}
+
 @media (min-width: 860px) {
   .nepali-hero { grid-template-columns: minmax(0, 1fr) auto; }
   .nepali-hero-emblem { display: grid; }
 }
 
 @media (max-width: 639px) {
-  .converter-page::before { top: 3.95rem; }
   .nepali-hero { border-radius: 1rem; }
   .nepali-system-band { border-radius: 0.9rem; width: 100%; justify-content: center; }
 }
