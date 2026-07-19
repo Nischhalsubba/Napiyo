@@ -37,7 +37,7 @@
       "name": "Measure with Field GPS",
       "short_name": "Field GPS",
       "description": "Record approximate plot corners with browser GPS.",
-      "url": "/#field",
+      "url": "/#gps",
       "icons": [{ "src": "/napiyo-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
