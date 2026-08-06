@@ -1,5 +1,95 @@
 # Napiyo
 
+<!-- interactive-readme-standard:start -->
+
+> [!NOTE]
+> **Branch-specific documentation:** this section is maintained for [`agent/redesign-conversion-board`](https://github.com/Nischhalsubba/Napiyo/tree/agent/redesign-conversion-board). It is generated from the files present on this branch and preserves the project-authored README below.
+
+<details open>
+<summary><strong>Interactive repository guide</strong></summary>
+
+## Branch overview
+
+| Item | Value |
+|---|---|
+| Repository | [`Nischhalsubba/Napiyo`](https://github.com/Nischhalsubba/Napiyo) |
+| Branch | [`agent/redesign-conversion-board`](https://github.com/Nischhalsubba/Napiyo/tree/agent/redesign-conversion-board) |
+| Detected stack | React, Vite, Tailwind CSS, TypeScript, HTML, CSS |
+| Detected manifests | package.json |
+| Documentation policy | Every maintained branch must explain purpose, setup, structure, architecture, flows, testing, delivery, security, and ownership. |
+
+## Repository structure
+
+```mermaid
+flowchart TD
+    ROOT["Napiyo / agent/redesign-conversion-board"]
+    ROOT --> P0[".github/"]
+    ROOT --> P1["components/"]
+    ROOT --> P2["docs/"]
+    ROOT --> P3["lib/"]
+    ROOT --> P4["public/"]
+    ROOT --> P5["utils/"]
+    ROOT --> P6[".node-version"]
+    ROOT --> P7["AGENTS.md"]
+    ROOT --> P8["App.tsx"]
+    ROOT --> P9["constants.ts"]
+    ROOT --> P10["index.css"]
+    ROOT --> P11["index.html"]
+    ROOT --> P12["index.tsx"]
+    ROOT --> P13["metadata.json"]
+    ROOT --> P14["package.json"]
+    ROOT --> P15["tsconfig.json"]
+    ROOT --> P16["types.ts"]
+    ROOT --> P17["vite.config.ts"]
+```
+
+The diagram is generated from the branch's actual top-level files and directories. Use the branch link above for complete source navigation.
+
+## Website or application structure
+
+```mermaid
+flowchart TD
+    APP["Napiyo"]
+    APP --> R0["public"]
+```
+
+## Application and responsibility flow
+
+```mermaid
+flowchart LR
+    ACTOR["User / contributor"]
+    ACTOR --> A0["Interface: public, components"]
+    A0 --> A1["Application logic: lib"]
+    A1 --> A2["Documentation: docs"]
+    A2 --> A3["Delivery: .github"]
+    A3 --> DELIVERY["Delivery: GitHub Actions"]
+```
+
+## Change-to-delivery flow
+
+```mermaid
+flowchart LR
+    CHANGE["Change on agent/redesign-conversion-board"]
+    CHECK["Validate: npm run dev, npm run build, npm run preview"]
+    REVIEW["Review documentation and architecture impact"]
+    RELEASE["Merge, release, or deploy according to this branch"]
+    CHANGE --> CHECK --> REVIEW --> RELEASE
+```
+
+## README requirements for this branch
+
+- Explain what this branch contains and how it differs from the default branch.
+- Keep installation, configuration, usage, testing, deployment, security, support, and license information accurate.
+- Document repository, website or application, API, data, authentication, background-job, and deployment flows when they exist.
+- Prefer Mermaid diagrams and expandable `<details>` sections for visual navigation.
+- Link diagrams and modules to real source paths; never invent missing components.
+- Preserve project-specific documentation and update diagrams whenever architecture or major paths change.
+- Treat secrets, private infrastructure, customer data, and credentials as prohibited README content.
+
+</details>
+
+<!-- interactive-readme-standard:end -->
+
 Napiyo is a Nepal-focused land area utility for converting local and global units, estimating plot area from an image, visualizing scale, and saving calculations in the browser.
 
 ## What it supports
