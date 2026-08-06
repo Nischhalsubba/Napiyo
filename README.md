@@ -1,5 +1,97 @@
 # Napiyo
 
+<!-- interactive-readme-standard:start -->
+
+> [!NOTE]
+> **Branch-specific documentation:** this section is maintained for [`agent/voice-nepali-ui`](https://github.com/Nischhalsubba/Napiyo/tree/agent/voice-nepali-ui). It is generated from the files present on this branch and preserves the project-authored README below.
+
+<details open>
+<summary><strong>Interactive repository guide</strong></summary>
+
+## Branch overview
+
+| Item | Value |
+|---|---|
+| Repository | [`Nischhalsubba/Napiyo`](https://github.com/Nischhalsubba/Napiyo) |
+| Branch | [`agent/voice-nepali-ui`](https://github.com/Nischhalsubba/Napiyo/tree/agent/voice-nepali-ui) |
+| Detected stack | React, Vite, Tailwind CSS, TypeScript, CSS, JavaScript, HTML |
+| Detected manifests | package.json |
+| Documentation policy | Every maintained branch must explain purpose, setup, structure, architecture, flows, testing, delivery, security, and ownership. |
+
+## Repository structure
+
+```mermaid
+flowchart TD
+    ROOT["Napiyo / agent/voice-nepali-ui"]
+    ROOT --> P0[".github/"]
+    ROOT --> P1["components/"]
+    ROOT --> P2["docs/"]
+    ROOT --> P3["e2e/"]
+    ROOT --> P4["lib/"]
+    ROOT --> P5["public/"]
+    ROOT --> P6["scripts/"]
+    ROOT --> P7["seo-assets/"]
+    ROOT --> P8["tests/"]
+    ROOT --> P9["utils/"]
+    ROOT --> P10[".node-version"]
+    ROOT --> P11["accessibility.css"]
+    ROOT --> P12["AGENTS.md"]
+    ROOT --> P13["App.tsx"]
+    ROOT --> P14["constants.ts"]
+    ROOT --> P15["dark-contrast.css"]
+    ROOT --> P16["index.css"]
+    ROOT --> P17["index.html"]
+    ROOT --> MORE["+ 9 more top-level entries"]
+```
+
+The diagram is generated from the branch's actual top-level files and directories. Use the branch link above for complete source navigation.
+
+## Website or application structure
+
+```mermaid
+flowchart TD
+    APP["Napiyo"]
+    APP --> R0["public"]
+```
+
+## Application and responsibility flow
+
+```mermaid
+flowchart LR
+    ACTOR["User / contributor"]
+    ACTOR --> A0["Interface: public, components"]
+    A0 --> A1["Application logic: lib"]
+    A1 --> A2["Quality: tests, e2e"]
+    A2 --> A3["Documentation: docs"]
+    A3 --> A4["Delivery: .github, scripts"]
+    A4 --> DELIVERY["Delivery: GitHub Actions"]
+```
+
+## Change-to-delivery flow
+
+```mermaid
+flowchart LR
+    CHANGE["Change on agent/voice-nepali-ui"]
+    CHECK["Validate: npm run dev, npm run build, npm run test, npm run preview"]
+    REVIEW["Review documentation and architecture impact"]
+    RELEASE["Merge, release, or deploy according to this branch"]
+    CHANGE --> CHECK --> REVIEW --> RELEASE
+```
+
+## README requirements for this branch
+
+- Explain what this branch contains and how it differs from the default branch.
+- Keep installation, configuration, usage, testing, deployment, security, support, and license information accurate.
+- Document repository, website or application, API, data, authentication, background-job, and deployment flows when they exist.
+- Prefer Mermaid diagrams and expandable `<details>` sections for visual navigation.
+- Link diagrams and modules to real source paths; never invent missing components.
+- Preserve project-specific documentation and update diagrams whenever architecture or major paths change.
+- Treat secrets, private infrastructure, customer data, and credentials as prohibited README content.
+
+</details>
+
+<!-- interactive-readme-standard:end -->
+
 Napiyo is a Nepal-focused land area utility for converting local and global units, estimating plot area from an image, visualizing scale, and saving calculations in the browser.
 
 ## What it supports
