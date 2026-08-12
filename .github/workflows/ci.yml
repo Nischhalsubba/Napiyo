@@ -3,9 +3,7 @@ name: Frontend checks
 on:
   pull_request:
   push:
-    branches:
-      - main
-      - 'agent/**'
+    branches: [main]
 
 permissions:
   contents: read
@@ -14,20 +12,19 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Install pinned dependencies
+          node-version-file: app/.node-version
+      - name: Install dependencies
         run: npm install --no-audit --no-fund
-
       - name: Type-check, test, and build
         run: npm run build
-
       - name: Reject public production source maps
         run: test -z "$(find dist/assets -name '*.map' -print -quit)"

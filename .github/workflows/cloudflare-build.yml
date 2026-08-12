@@ -2,9 +2,7 @@ name: Cloudflare build gate
 
 on:
   push:
-    branches:
-      - main
-      - 'agent/**'
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -15,14 +13,17 @@ jobs:
   verify-cloudflare-worker:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Install pinned dependencies
+          node-version-file: app/.node-version
+      - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Typecheck, test, and build Cloudflare output
         run: npm run build:cloudflare
@@ -33,7 +34,7 @@ jobs:
           test -f dist/manifest.webmanifest
           test -f dist/sw.js
           test -f wrangler.jsonc
-          test ! -f dist/_redirects
+          test ! -e dist/_redirects
           test -z "$(find dist/assets -name '*.map' -print -quit)"
           grep -q "Content-Security-Policy" dist/_headers
           grep -q "Strict-Transport-Security" dist/_headers
