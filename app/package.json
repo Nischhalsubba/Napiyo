@@ -7,7 +7,7 @@
   "author": "Nischhal Raj Subba",
   "license": "MIT",
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "packageManager": "npm@10.9.2",
   "scripts": {
