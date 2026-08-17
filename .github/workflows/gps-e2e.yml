@@ -12,11 +12,16 @@ on:
       - 'app/e2e/**'
       - 'app/playwright.config.ts'
       - 'app/package.json'
+      - 'app/.node-version'
       - '.github/workflows/gps-e2e.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: browser-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   browser-flows:
@@ -27,20 +32,24 @@ jobs:
         working-directory: app
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Use Node 22
-        uses: actions/setup-node@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: app/.node-version
+      - name: Verify npm version
+        run: test "$(npm --version)" = "11.17.0"
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-fund
+      - name: Audit dependencies
+        run: npm audit --audit-level=low
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx --no-install playwright install --with-deps chromium
       - name: Run browser E2E
         run: npm run test:e2e
       - name: Upload failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-e2e-artifacts
           path: |

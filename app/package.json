@@ -7,9 +7,9 @@
   "author": "Nischhal Raj Subba",
   "license": "MIT",
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@11.17.0",
   "scripts": {
     "prepare:seo": "node scripts/prepare-seo-assets.mjs",
     "dev": "npm run prepare:seo && vite",
@@ -28,7 +28,7 @@
     "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@playwright/test": "1.54.2",
+    "@playwright/test": "1.62.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.13.3",
     "@types/react": "19.2.17",
