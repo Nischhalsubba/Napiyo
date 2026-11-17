@@ -116,6 +116,12 @@ export const safeCsvCell = (value: unknown): string => {
 };
 
 export const safeDownloadName = (value: string, fallback = 'napiyo-project'): string => {
-  const cleaned = value.normalize('NFKC').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
-  return cleaned || fallback;
+  const cleaned = value.normalize('NFKC')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^[.-]+|[.-]+$/g, '')
+    .slice(0, 80)
+    .replace(/[.-]+$/g, '');
+  // Windows reserves these device names even when an extension is appended.
+  const reserved = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
+  return cleaned && !reserved.test(cleaned) ? cleaned : fallback;
 };
