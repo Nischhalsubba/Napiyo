@@ -51,8 +51,10 @@ export const averageAccuracyM = (points: GeoPoint[]): number => points.length
   : 0;
 
 export const shouldAcceptPoint = (candidate: GeoPoint, accepted: GeoPoint[], maximumAccuracyM: number, minimumSpacingM = 0.75): boolean => {
-  if (!Number.isFinite(candidate.lat) || !Number.isFinite(candidate.lng) || !Number.isFinite(candidate.accuracy)) return false;
-  if (candidate.accuracy > maximumAccuracyM) return false;
+  if (!Number.isFinite(candidate.lat) || candidate.lat < -90 || candidate.lat > 90) return false;
+  if (!Number.isFinite(candidate.lng) || candidate.lng < -180 || candidate.lng > 180) return false;
+  if (!Number.isFinite(candidate.accuracy) || candidate.accuracy < 0) return false;
+  if (!Number.isFinite(maximumAccuracyM) || maximumAccuracyM < 0 || candidate.accuracy > maximumAccuracyM) return false;
   const last = accepted.at(-1);
   return !last || haversineDistanceM(last, candidate) >= minimumSpacingM;
 };

@@ -43,6 +43,20 @@ describe('GPS geometry', () => {
     expect(shouldAcceptPoint(point(27.7, 85.3, 4), [point(27.7, 85.3)], 20)).toBe(false);
   });
 
+  it('rejects out-of-range coordinates and negative GPS accuracy', () => {
+    for (const invalid of [
+      point(90.001, 85.3), point(-90.001, 85.3),
+      point(27.7, 180.001), point(27.7, -180.001),
+      point(27.7, 85.3, -1),
+      point(Number.NaN, 85.3), point(27.7, Number.POSITIVE_INFINITY),
+    ]) {
+      expect(shouldAcceptPoint(invalid, [], 20)).toBe(false);
+    }
+    expect(shouldAcceptPoint(point(27.7, 85.3, 4), [], -1)).toBe(false);
+    expect(shouldAcceptPoint(point(27.7, 85.3, 4), [], Number.NaN)).toBe(false);
+    expect(shouldAcceptPoint(point(27.7, 85.3, 4), [], 20)).toBe(true);
+  });
+
   it('summarizes GPS accuracy', () => {
     expect(averageAccuracyM([point(0, 0, 4), point(0, 0, 8)])).toBe(6);
   });
