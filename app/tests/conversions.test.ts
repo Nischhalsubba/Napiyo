@@ -36,6 +36,16 @@ describe('smart Nepal land input', () => {
     expect(parseSmartArea('0.25 acre').sqFt).toBe(10890);
   });
 
+  it('rejects negative named components instead of returning a partial total', () => {
+    for (const text of ['-1 ropani 2 aana', '1 ropani -2 aana', '-२ कठ्ठा ५ धुर']) {
+      const result = parseSmartArea(text);
+      expect(result.recognized).toBe(false);
+      expect(result.sqFt).toBe(0);
+      expect(result.matchedUnits).toEqual([]);
+    }
+    expect(parseSmartArea('1-2-3-4').recognized).toBe(true);
+  });
+
   it('does not claim unrecognized text is valid', () => {
     expect(parseSmartArea('some mysterious land').recognized).toBe(false);
   });
