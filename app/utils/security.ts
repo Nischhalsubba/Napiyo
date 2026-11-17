@@ -94,16 +94,23 @@ export const isSafeSavedItem = (value: unknown): value is SavedItem => {
     && isSource(item.source);
 };
 
-export const normalizeSafeItems = (items: unknown[]): SavedItem[] => items
-  .filter(isSafeSavedItem)
-  .slice(0, MAX_IMPORT_PROJECTS)
-  .map((item) => ({
-    ...item,
-    title: item.title.trim(),
-    sqM: typeof item.sqM === 'number' ? item.sqM : item.sqFt * 0.09290304,
-    tags: item.tags.map((tag) => tag.trim()).filter(Boolean),
-    notes: item.notes?.trim() || undefined,
-  }));
+export const normalizeSafeItems = (items: unknown[]): SavedItem[] => {
+  const seenIds = new Set<string>();
+  return items
+    .filter((item): item is SavedItem => {
+      if (!isSafeSavedItem(item) || seenIds.has(item.id)) return false;
+      seenIds.add(item.id);
+      return true;
+    })
+    .slice(0, MAX_IMPORT_PROJECTS)
+    .map((item) => ({
+      ...item,
+      title: item.title.trim(),
+      sqM: typeof item.sqM === 'number' ? item.sqM : item.sqFt * 0.09290304,
+      tags: item.tags.map((tag) => tag.trim()).filter(Boolean),
+      notes: item.notes?.trim() || undefined,
+    }));
+};
 
 export const escapeHtml = (value: unknown): string => String(value).replace(/[&<>'"]/g, (character) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
