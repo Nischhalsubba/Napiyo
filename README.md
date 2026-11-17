@@ -49,12 +49,16 @@ flowchart TD
 
 ## Getting started
 
+The maintained application is in `app/`, not the repository root. Use Node.js 24 (see `app/package.json`).
+
 ```bash
 git clone https://github.com/Nischhalsubba/Napiyo.git
-cd Napiyo
+cd Napiyo/app
+npm install
+npm run dev
 ```
 
-Use the manifests and lockfiles in the repository to determine the supported runtime and development commands.
+Run `npm run build` from `app/` to validate the app before submitting changes.
 
 ## Product & design principles
 
