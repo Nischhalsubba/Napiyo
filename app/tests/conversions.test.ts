@@ -60,6 +60,13 @@ describe('normalization and geometry', () => {
     expect(getTeraiBreakdown(toSqFt(20, 'KATTHA'))).toEqual({ bigha: 1, kattha: 0, dhur: 0 });
   });
 
+  it('returns zero instead of NaN for invalid conversion totals', () => {
+    for (const input of [NaN, Infinity, -Infinity, -10]) {
+      expect(getHillsBreakdown(input)).toEqual({ ropani: 0, aana: 0, paisa: 0, daam: 0 });
+      expect(getTeraiBreakdown(input)).toEqual({ bigha: 0, kattha: 0, dhur: 0 });
+    }
+  });
+
   it('calculates polygon area and perimeter', () => {
     const rectangle = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 5 }, { x: 0, y: 5 }];
     expect(calculatePolygonAreaPx(rectangle)).toBe(50);
