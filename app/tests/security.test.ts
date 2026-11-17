@@ -24,6 +24,14 @@ describe('saved project security validation', () => {
     expect(normalizeSafeItems([validProject])).toHaveLength(1);
   });
 
+  it('keeps the first project for duplicate imported IDs', () => {
+    const renamed = { ...validProject, title: 'Conflicting duplicate' };
+    const distinct = { ...validProject, id: 'project-2', title: 'Second project' };
+    const normalized = normalizeSafeItems([validProject, renamed, distinct]);
+    expect(normalized.map((item) => item.id)).toEqual(['project-1', 'project-2']);
+    expect(normalized[0].title).toBe('Home plot');
+  });
+
   it('rejects invalid coordinates and negative areas', () => {
     expect(isSafeSavedItem({ ...validProject, sqFt: -1 })).toBe(false);
     expect(isSafeSavedItem({ ...validProject, source: { geoPoints: [{ lat: 200, lng: 85, accuracy: 4, timestamp: 1 }] } })).toBe(false);
