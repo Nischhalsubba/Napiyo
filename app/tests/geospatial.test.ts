@@ -4,6 +4,7 @@ import {
   areaSqFtFromGeo,
   averageAccuracyM,
   haversineDistanceM,
+  WEB_MERCATOR_TILE_SIZE,
   metresPerPixel,
   polygonAreaSqM,
   polygonPerimeterM,
@@ -69,6 +70,17 @@ describe('GPS geometry', () => {
     expect(Number.isFinite(kathmandu.x)).toBe(true);
     expect(Number.isFinite(kathmandu.y)).toBe(true);
     expect(metresPerPixel(27.7, 18)).toBeGreaterThan(0);
+  });
+
+  it('wraps westward map pans into valid longitude bounds', () => {
+    const zoom = 1;
+    const worldWidth = WEB_MERCATOR_TILE_SIZE * 2 ** zoom;
+    for (const x of [-worldWidth * 1.5, -worldWidth * 2.5, worldWidth * 2.5]) {
+      const result = projectWorldPixelsToGeo({ x, y: worldWidth / 2 }, zoom);
+      expect(result.lng).toBeGreaterThanOrEqual(-180);
+      expect(result.lng).toBeLessThan(180);
+    }
+    expect(projectWorldPixelsToGeo({ x: -worldWidth * 1.5, y: worldWidth / 2 }, zoom).lng).toBe(0);
   });
 
   it('reverses map pixels back into geographic coordinates', () => {
