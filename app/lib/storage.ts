@@ -15,6 +15,13 @@ interface StorageSchema {
 export const isSavedItem = isSafeSavedItem;
 export const normalizeItems = normalizeSafeItems;
 
+export const mergeStoredItems = (local: SavedItem[], indexed: SavedItem[]): SavedItem[] =>
+  normalizeItems([...local, ...indexed].filter((item, index, all) =>
+    all.findIndex((candidate) => candidate.id === item.id) === index));
+
+export const needsIndexedMirrorRefresh = (merged: SavedItem[], indexed: SavedItem[]): boolean =>
+  JSON.stringify(merged) !== JSON.stringify(indexed);
+
 const readLocal = (): SavedItem[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -76,8 +83,8 @@ export const hydrateItems = async (): Promise<SavedItem[]> => {
   try {
     const indexed = await readIndexedDb();
     if (indexed.length) {
-      const merged = normalizeItems([...indexed, ...local].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index));
-      if (merged.length !== indexed.length) await writeIndexedDb(merged);
+      const merged = mergeStoredItems(local, indexed);
+      if (needsIndexedMirrorRefresh(merged, indexed)) await writeIndexedDb(merged);
       return merged;
     }
     if (local.length) await writeIndexedDb(local);
