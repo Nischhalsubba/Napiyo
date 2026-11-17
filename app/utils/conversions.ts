@@ -23,7 +23,7 @@ const UNIT_ALIASES:Array<{id:string;label:string;aliases:string[]}>= [
 ];
 const escapeRegExp=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 export const parseSmartArea=(raw:string):ParsedArea=>{
-  const ne=nepaliUi();const text=normalizeDigits(raw).toLowerCase().replace(/,/g,'').replace(/–|—/g,'-').trim();
+  const ne=nepaliUi();const text=normalizeDigits(raw).toLowerCase().replace(/,/g,'').replace(/[–—−]/g,'-').trim();
   if(!text)return{sqFt:0,recognized:false,interpretation:ne?'सुरु गर्न क्षेत्रफल लेख्नुहोस्।':'Enter an area to begin.',matchedUnits:[]};
   const compact=text.match(/^\s*(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)(?:\s*[-/]\s*(\d+(?:\.\d+)?))?\s*$/);
   if(compact){const values=compact.slice(1).filter(Boolean).map(Number);if(values.length===4){const sqFt=hillsToSqFt({ropani:values[0],aana:values[1],paisa:values[2],daam:values[3]});return{sqFt,recognized:true,interpretation:`${values[0]} ${unitLabel('ROPANI')} · ${values[1]} ${unitLabel('AANA')} · ${values[2]} ${unitLabel('PAISA')} · ${values[3]} ${unitLabel('DAAM')}`,matchedUnits:['ROPANI','AANA','PAISA','DAAM']};}const sqFt=teraiToSqFt({bigha:values[0],kattha:values[1],dhur:values[2]});return{sqFt,recognized:true,interpretation:`${values[0]} ${unitLabel('BIGHA')} · ${values[1]} ${unitLabel('KATTHA')} · ${values[2]} ${unitLabel('DHUR')}`,matchedUnits:['BIGHA','KATTHA','DHUR']};}

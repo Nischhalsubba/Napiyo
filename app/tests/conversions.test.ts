@@ -37,7 +37,7 @@ describe('smart Nepal land input', () => {
   });
 
   it('rejects negative named components instead of returning a partial total', () => {
-    for (const text of ['-1 ropani 2 aana', '1 ropani -2 aana', '-२ कठ्ठा ५ धुर']) {
+    for (const text of ['-1 ropani 2 aana', '1 ropani -2 aana', '-२ कठ्ठा ५ धुर', '−1 ropani 2 aana', '1 ropani −2 aana', '−२ कठ्ठा ५ धुर']) {
       const result = parseSmartArea(text);
       expect(result.recognized).toBe(false);
       expect(result.sqFt).toBe(0);
