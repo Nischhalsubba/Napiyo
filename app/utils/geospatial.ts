@@ -76,7 +76,7 @@ export const projectWorldPixelsToGeo = (point: { x: number; y: number }, zoom: n
   const lat = degrees(Math.atan(Math.sinh(mercatorY * 2 * Math.PI)));
   return {
     lat: Math.max(-WEB_MERCATOR_MAX_LAT, Math.min(WEB_MERCATOR_MAX_LAT, lat)),
-    lng: ((lng + 540) % 360) - 180,
+    lng: (((lng + 180) % 360 + 360) % 360) - 180,
   };
 };
 
