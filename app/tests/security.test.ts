@@ -56,6 +56,10 @@ describe('safe output encoding', () => {
   it('creates filesystem-safe names', () => {
     expect(safeDownloadName('../../My plot <script>')).toBe('My-plot-script');
     expect(safeDownloadName('...')).toBe('napiyo-project');
+    expect(safeDownloadName('.')).toBe('napiyo-project');
+    expect(safeDownloadName('..')).toBe('napiyo-project');
+    expect(safeDownloadName('  ...  ')).toBe('napiyo-project');
+    expect(safeDownloadName(`${'a'.repeat(79)}.`)).toBe('a'.repeat(79));
     expect(safeDownloadName('CON')).toBe('napiyo-project');
     expect(safeDownloadName('LPT1.report')).toBe('napiyo-project');
     expect(safeDownloadName('Project.final')).toBe('Project.final');
