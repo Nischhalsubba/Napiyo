@@ -74,3 +74,7 @@ Public pages should naturally use accurate terms such as **Nepal land measuremen
 flowchart LR
     RULE["Unit / formula change"] --> VERIFY["Verify domain source"] --> IMPLEMENT["Update calculation / UI"] --> TEST["Boundary + precision tests"] --> UX["Review labels / errors"] --> PR["Pull request"]
 ```
+
+## Verification guide
+
+Review [conversion review.md](app/docs/CONVERSION_REVIEW.md) before changing domain data, public claims, or user-facing workflows.
