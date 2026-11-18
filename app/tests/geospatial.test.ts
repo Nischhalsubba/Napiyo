@@ -83,6 +83,16 @@ describe('GPS geometry', () => {
     expect(projectWorldPixelsToGeo({ x: -worldWidth * 1.5, y: worldWidth / 2 }, zoom).lng).toBe(0);
   });
 
+  it('keeps longitudes within bounds after multiple westward map wraps', () => {
+    const zoom = 2;
+    const scale = 256 * 2 ** zoom;
+    const restored = projectWorldPixelsToGeo({ x: -2.25 * scale, y: scale / 2 }, zoom);
+    expect(restored.lng).toBeCloseTo(90, 6);
+    expect(restored.lat).toBeCloseTo(0, 6);
+    expect(restored.lng).toBeGreaterThanOrEqual(-180);
+    expect(restored.lng).toBeLessThan(180);
+  });
+
   it('reverses map pixels back into geographic coordinates', () => {
     const source = point(26.463704, 87.274993);
     const pixels = projectGeoToWorldPixels(source, 18);
