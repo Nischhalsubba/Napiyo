@@ -1,0 +1,43 @@
+{
+  "name": "napiyo-nepal-land-tools",
+  "private": true,
+  "version": "1.3.0",
+  "type": "module",
+  "description": "A trustworthy, Nepal-focused land unit converter, plot estimator, visualizer, and saved calculation utility.",
+  "author": "Nischhal Raj Subba",
+  "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "npm@11.17.0",
+  "scripts": {
+    "prepare:seo": "node scripts/prepare-seo-assets.mjs",
+    "dev": "npm run prepare:seo && vite",
+    "check": "tsc --noEmit",
+    "test": "npm run prepare:seo && vitest run",
+    "test:watch": "npm run prepare:seo && vitest",
+    "test:e2e": "playwright test",
+    "build": "npm run check && npm run test && vite build",
+    "build:cloudflare": "npm run check && npm run test && vite build",
+    "verify": "npm run build:cloudflare",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "1.44.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "@vercel/analytics": "^1.6.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@tailwindcss/vite": "4.3.5",
+    "@types/node": "26.2.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.3.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "4.1.12"
+  }
+}

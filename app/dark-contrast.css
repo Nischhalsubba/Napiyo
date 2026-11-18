@@ -1,0 +1,93 @@
+/*
+ * Dark-mode contrast compatibility.
+ *
+ * Napiyo uses legacy Tailwind utility names such as bg-ink-950 both for
+ * intentionally dark feature cards and for semantic text colors. The base
+ * dark theme lightens the ink scale for text, so these explicit overrides
+ * keep dark feature surfaces dark while preserving readable foreground text.
+ */
+
+html.dark .bg-ink-950 {
+  background-color: #171a21 !important;
+}
+
+html.dark .bg-ink-900 {
+  background-color: #20242c !important;
+}
+
+html.dark .border-ink-900 {
+  border-color: #2b3039 !important;
+}
+
+html.dark .text-white {
+  color: #ffffff !important;
+}
+
+html.dark .text-ink-950 {
+  color: #f5f7fa !important;
+}
+
+html.dark .text-ink-900 {
+  color: #f0f3f7 !important;
+}
+
+html.dark .text-ink-800 {
+  color: #e7ebf0 !important;
+}
+
+html.dark .text-ink-700 {
+  color: #d7dde5 !important;
+}
+
+html.dark .text-ink-600 {
+  color: #c2cad5 !important;
+}
+
+html.dark .text-ink-500 {
+  color: #aeb7c4 !important;
+}
+
+html.dark .text-ink-400 {
+  color: #8f9aaa !important;
+}
+
+html.dark .text-ink-300 {
+  color: #b8c0cc !important;
+}
+
+html.dark .text-ink-200 {
+  color: #d7dde5 !important;
+}
+
+html.dark .text-ink-100,
+html.dark .text-ink-50 {
+  color: #eef1f4 !important;
+}
+
+/* Keep feature-card actions readable against charcoal surfaces. */
+html.dark .bg-ink-950 .bg-white,
+html.dark .bg-ink-900 .bg-white {
+  background-color: #ffffff !important;
+  color: #171a21 !important;
+}
+
+html.dark .bg-ink-950 [class*="bg-white/"],
+html.dark .bg-ink-900 [class*="bg-white/"] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+html.dark .bg-ink-950 .border-white\/15,
+html.dark .bg-ink-900 .border-white\/15 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* White and semantic cards use dark surfaces with light semantic text. */
+html.dark .bg-white:not(.bg-ink-950 *):not(.bg-ink-900 *) {
+  background-color: var(--color-surface) !important;
+}
+
+html.dark select option {
+  background-color: #151b23;
+  color: #f5f7fa;
+}

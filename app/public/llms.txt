@@ -1,0 +1,38 @@
+# Napiyo — Nepal Land Tools
+
+> Napiyo is a free, local-first web application for understanding and planning Nepal land measurements.
+
+## Canonical URL
+
+- https://napiyo.hinischalsubba.workers.dev/
+
+## Main capabilities
+
+- Convert Ropani, Aana, Paisa and Daam.
+- Convert Bigha, Kattha and Dhur.
+- Convert square feet, square metres, square yards, acres and hectares.
+- Estimate land price from a price per supported unit.
+- Trace plot boundaries from locally uploaded images.
+- Record approximate field corners through browser GPS.
+- Arrange buildings in a visual site planner.
+- Save projects locally in the user's browser and export backups.
+
+## Important accuracy note
+
+Mathematical unit conversions are exact according to Napiyo's conversion constants. Image tracing, GPS measurements, price estimates and site plans are planning aids, not legal survey records. Official area and boundaries must come from cadastral records and qualified professionals.
+
+## Privacy
+
+Napiyo is local-first. Uploaded images and saved projects remain in the user's browser unless the user explicitly exports or shares them. Online OpenStreetMap tiles may receive the approximate viewed map area and network request metadata.
+
+## Technology
+
+- React 19
+- TypeScript
+- Vite 8
+- IndexedDB and localStorage
+- Cloudflare Workers Static Assets
+
+## Repository
+
+- https://github.com/Nischhalsubba/Napiyo

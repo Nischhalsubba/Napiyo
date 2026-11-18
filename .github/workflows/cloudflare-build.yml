@@ -1,0 +1,48 @@
+name: Cloudflare build gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-cloudflare-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Use Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: app/.node-version
+      - name: Verify npm version
+        run: test "$(npm --version)" = "11.17.0"
+      - name: Install dependencies
+        run: npm install --no-fund
+      - name: Audit dependencies
+        run: npm audit --audit-level=low
+      - name: Typecheck, test, and build Cloudflare output
+        run: npm run build:cloudflare
+      - name: Verify Cloudflare Workers assets
+        run: |
+          test -f dist/index.html
+          test -f dist/_headers
+          test -f dist/manifest.webmanifest
+          test -f dist/sw.js
+          test -f wrangler.jsonc
+          test ! -e dist/_redirects
+          test -z "$(find dist/assets -name '*.map' -print -quit)"
+          grep -q "Content-Security-Policy" dist/_headers
+          grep -q "Strict-Transport-Security" dist/_headers

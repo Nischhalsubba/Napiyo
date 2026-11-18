@@ -1,249 +1,76 @@
-<!-- interactive-readme-standard:start -->
-
 <div align="center">
 
 # Napiyo
 
-**Branch-aware technical guide for [`vercel/set-up-vercel-web-analytics-in-oixjbl`](https://github.com/Nischhalsubba/Napiyo/tree/vercel/set-up-vercel-web-analytics-in-oixjbl)**
+**A Nepal-focused land measurement product shaped around local terminology, practical conversions, and everyday property-measurement workflows.**
 
-<p><img alt="branch: vercel/set-up-vercel-web-analytics-in-oixjbl" src="https://img.shields.io/static/v1?label=&message=branch%3A%20vercel%2Fset-up-vercel-web-analytics-in-oixjbl&color=5965F2&style=flat-square"> <img alt="React" src="https://img.shields.io/static/v1?label=&message=React&color=24292F&style=flat-square"> <img alt="Vite" src="https://img.shields.io/static/v1?label=&message=Vite&color=24292F&style=flat-square"> <img alt="TypeScript" src="https://img.shields.io/static/v1?label=&message=TypeScript&color=24292F&style=flat-square"> <img alt="HTML" src="https://img.shields.io/static/v1?label=&message=HTML&color=24292F&style=flat-square"> <img alt="CSS" src="https://img.shields.io/static/v1?label=&message=CSS&color=24292F&style=flat-square"> <img alt="docs: branch-aware" src="https://img.shields.io/static/v1?label=&message=docs%3A%20branch-aware&color=8250DF&style=flat-square"></p>
+![Top language](https://img.shields.io/github/languages/top/Nischhalsubba/Napiyo?style=flat-square)
+![Last commit](https://img.shields.io/github/last-commit/Nischhalsubba/Napiyo?style=flat-square)
+![Repo size](https://img.shields.io/github/repo-size/Nischhalsubba/Napiyo?style=flat-square)
 
-<p>
-  <a href="https://github.com/Nischhalsubba/Napiyo/tree/vercel/set-up-vercel-web-analytics-in-oixjbl"><strong>Browse source</strong></a> ·
-  <a href="https://github.com/Nischhalsubba/Napiyo/issues"><strong>Issues</strong></a> ·
-  <a href="https://github.com/Nischhalsubba/Napiyo/codespaces/new?ref=vercel%2Fset-up-vercel-web-analytics-in-oixjbl"><strong>Open in Codespaces</strong></a>
-</p>
+[Browse source](https://github.com/Nischhalsubba/Napiyo/tree/main) · [Issues](https://github.com/Nischhalsubba/Napiyo/issues)
 
 </div>
 
-> [!IMPORTANT]
-> This guide is generated from the files actually present on `vercel/set-up-vercel-web-analytics-in-oixjbl`. It links to detected source paths, preserves project-authored notes, and avoids claiming components that were not found.
+## Overview
 
-## At a glance
+**Napiyo** is a land-measurement experience designed around the way land area is discussed and calculated in Nepal. The product should make conversions and measurement relationships easy to inspect instead of forcing users to translate local units into unfamiliar systems first.
 
-| Item | Detected value |
+| Audience | Focus |
 |---|---|
-| Purpose | A React project documented from the current branch structure and manifests. |
-| Branch role | Compared with `main` |
-| Stack | React, Vite, TypeScript, HTML, CSS |
-| Manifests | package.json |
-| Prerequisites | Node.js |
-| Delivery | No conventional deployment configuration detected |
-| License | No license file detected |
+| Landowners / users | Enter measurements and understand results clearly |
+| Developers | Conversion rules, validation, precision and UI state |
+| Designers | Local terminology, numeric input, responsive forms and result clarity |
+| Domain reviewers | Unit definitions, formulas, rounding and regional assumptions |
 
-## Branch scope
+<details open>
+<summary><strong>🏗️ Interactive measurement architecture</strong></summary>
 
-This branch differs from the default branch in the following detected paths:
+```mermaid
+flowchart LR
+    USER["User"] --> INPUT["Measurement input"]
+    INPUT --> UNIT["Local / supported units"]
+    UNIT --> VALIDATE["Validation"]
+    VALIDATE --> ENGINE["Conversion / calculation engine"]
+    ENGINE --> RESULT["Converted measurements"]
+    RESULT --> UI["Readable comparison / output"]
+    UI --> USER
+```
 
-- [`App.tsx`](https://github.com/Nischhalsubba/Napiyo/blob/vercel/set-up-vercel-web-analytics-in-oixjbl/App.tsx)
-- [`README.md`](https://github.com/Nischhalsubba/Napiyo/blob/vercel/set-up-vercel-web-analytics-in-oixjbl/README.md)
-- [`package-lock.json`](https://github.com/Nischhalsubba/Napiyo/blob/vercel/set-up-vercel-web-analytics-in-oixjbl/package-lock.json)
-- [`package.json`](https://github.com/Nischhalsubba/Napiyo/blob/vercel/set-up-vercel-web-analytics-in-oixjbl/package.json)
+</details>
 
-## Quick start
+## Measurement flow
+
+```mermaid
+flowchart TD
+    START["Choose measurement task"] --> UNIT["Select source unit"] --> VALUE["Enter value"] --> CHECK["Validate input"] --> CALC["Calculate / convert"] --> RESULT["Review result"] --> NEXT{"Convert again?"}
+    NEXT -->|Yes| UNIT
+```
+
+## Getting started
+
+The maintained application is in `app/`, not the repository root. Use Node.js 24 (see `app/package.json`).
 
 ```bash
+git clone https://github.com/Nischhalsubba/Napiyo.git
+cd Napiyo/app
 npm install
 npm run dev
-npm run build
-npm run preview
 ```
 
-### Configuration surface
+Run `npm run build` from `app/` to validate the app before submitting changes.
 
-- No committed environment example file was detected.
+## Product & design principles
 
-> Never commit secrets, private keys, production credentials, customer data, or unredacted infrastructure details.
+Numbers need context. Always show the active units, prevent ambiguous input, define rounding behavior, preserve precision where it matters, make errors specific, and avoid implying survey/legal certainty when a calculation is only a convenience conversion.
 
-## Repository map
+## SEO & Nepal discoverability
 
-```mermaid
-flowchart TD
-    ROOT["Napiyo / vercel/set-up-vercel-web-analytics-in-oixjbl"]
-    ROOT --> P0["components/"]
-    ROOT --> P1["lib/"]
-    ROOT --> P2["utils/"]
-    ROOT --> P3["App.tsx"]
-    ROOT --> P4["constants.ts"]
-    ROOT --> P5["index.css"]
-    ROOT --> P6["index.html"]
-    ROOT --> P7["index.tsx"]
-    ROOT --> P8["metadata.json"]
-    ROOT --> P9["package-lock.json"]
-    ROOT --> P10["package.json"]
-    ROOT --> P11["tsconfig.json"]
-    ROOT --> P12["types.ts"]
-    ROOT --> P13["vite.config.ts"]
-```
-
-| Responsibility | Detected source paths |
-|---|---|
-| Interface | [`components`](https://github.com/Nischhalsubba/Napiyo/tree/vercel/set-up-vercel-web-analytics-in-oixjbl/components) |
-| Application logic | [`lib`](https://github.com/Nischhalsubba/Napiyo/tree/vercel/set-up-vercel-web-analytics-in-oixjbl/lib) |
-
-## Website or application map
-
-```mermaid
-flowchart TD
-    APP["Napiyo"]
-    APP --> SOURCE["No conventional route directory detected"]
-    SOURCE --> GUIDE["Use the repository and architecture maps below"]
-```
-
-## Architecture and responsibility flow
-
-```mermaid
-flowchart LR
-    USER["User / contributor"]
-    USER --> A0["Interface: components"]
-    A0 --> A1["Application logic: lib"]
-```
-
-
-
-## Quality, security, and operations
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### Quality
-
-- No conventional test directory was detected automatically.
-
-Detected commands:
-- `npm run dev`
-- `npm run build`
-- `npm run preview`
-
-</td>
-<td width="33%" valign="top">
-
-### Security
-
-- No dedicated security policy or automated dependency configuration was detected.
-
-Review authentication, authorization, input validation, dependency updates, secret handling, and failure recovery before release.
-
-</td>
-<td width="34%" valign="top">
-
-### Observability
-
-- No dedicated observability integration was detected automatically.
-
-Define useful logs, metrics, traces, alerts, and rollback signals for production-facing branches.
-
-</td>
-</tr>
-</table>
-
-## Delivery flow
-
-```mermaid
-flowchart LR
-    CHANGE["Change on vercel/set-up-vercel-web-analytics-in-oixjbl"] --> CHECK["Tests and quality checks"]
-    CHECK --> REVIEW["Review architecture and documentation impact"]
-    REVIEW --> BUILD["Build or package"]
-    BUILD --> DEPLOY["Deploy or release"]
-    DEPLOY --> VERIFY["Verify health and rollback readiness"]
-```
-
-### Automation detected
-
-- No GitHub Actions workflow files were detected.
+Public pages should naturally use accurate terms such as **Nepal land measurement, land unit converter Nepal, ropani, aana, paisa, daam, bigha, kattha, dhur, square feet, square meter, and land area conversion** only where those units are genuinely supported. Maintain useful titles/descriptions, semantic headings, canonical URLs, structured FAQ/content where appropriate, and indexable explanatory text.
 
 ## Contribution flow
 
 ```mermaid
 flowchart LR
-    FORK["Create branch"] --> CHANGE["Make focused change"]
-    CHANGE --> TEST["Run relevant checks"]
-    TEST --> DOCS["Update README and diagrams"]
-    DOCS --> PR["Open pull request"]
-    PR --> REVIEW["Review and iterate"]
-    REVIEW --> MERGE["Merge when ready"]
+    RULE["Unit / formula change"] --> VERIFY["Verify domain source"] --> IMPLEMENT["Update calculation / UI"] --> TEST["Boundary + precision tests"] --> UX["Review labels / errors"] --> PR["Pull request"]
 ```
-
-- Keep changes focused and explain architectural consequences.
-- Run the checks relevant to the changed area.
-- Update diagrams whenever routes, modules, data models, authentication, jobs, or delivery paths change.
-- Add screenshots or recordings for visual behavior changes when useful.
-- Use issues for reproducible defects and pull requests for reviewable changes.
-
-## Ownership and support
-
-| Topic | Source |
-|---|---|
-| Repository | [`Nischhalsubba/Napiyo`](https://github.com/Nischhalsubba/Napiyo) |
-| Branch | [`vercel/set-up-vercel-web-analytics-in-oixjbl`](https://github.com/Nischhalsubba/Napiyo/tree/vercel/set-up-vercel-web-analytics-in-oixjbl) |
-| Ownership | No CODEOWNERS file detected |
-| Contributing | Use the contribution flow above |
-| Support | [Open or review issues](https://github.com/Nischhalsubba/Napiyo/issues) |
-| License | No license file detected |
-
-<details>
-<summary><strong>Documentation maintenance checklist</strong></summary>
-
-- [ ] Purpose and branch scope are accurate.
-- [ ] Setup and configuration commands still work.
-- [ ] Repository, application, API, data, authentication, job, and deployment diagrams match the code.
-- [ ] Tests, security controls, observability, and rollback behavior are documented.
-- [ ] Links point to real files on this branch.
-- [ ] No secrets or private operational details are exposed.
-
-</details>
-
-<!-- interactive-readme-standard:end -->
-
-<!-- project-authored-notes:start -->
-<details>
-<summary><strong>Project-authored notes preserved from this branch</strong></summary>
-
-# Napiyo
-
-**Napiyo** is a premier land measurement and unit conversion utility built specifically for the Nepalese context. Bridging the gap between traditional measurement systems and modern technology, Napiyo provides an intuitive interface for real estate professionals, landowners, and engineers to calculate and visualize land areas with precision.
-
-## Overview
-
-Handling land measurements in Nepal can be complex due to the dual systems used in different regions (Hills vs. Terai). Napiyo simplifies this by offering:
-- **Smart Conversions**: Seamlessly translate between Ropani/Aana/Paisa/Daam, Bigha/Kattha/Dhur, and standard metric/imperial units.
-- **Visual Tools**: Interactive measurement capabilities for maps and plot analysis.
-- **Data Management**: Save specific calculations, manage history, and compare multiple plots effortlessly.
-
-## Features
-
-- **🇳🇵 Region-Specific Units**: Full support for both Hill (Ropani system) and Terai (Bigha system) measurements.
-- **🔄 Universal Converter**: Instant conversion to and from Sq. Feet, Sq. Meters, and other standard units.
-- **📱 Responsive Design**: A measuring tool that works perfectly on desktop and mobile devices.
-- **💾 Save & Organize**: Keep track of your measurements with a dedicated 'Saved' section.
-
-## Tech Stack
-
-Built with a focus on performance and user experience:
-- **Frontend**: React + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-
-## Credits
-
-- **Designed by**: Nischhal Raj Subba
-- **Coded by**: Nischhal Raj Subba
-
-## Getting Started
-
-To run this project locally:
-
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-2. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-</details>
-<!-- project-authored-notes:end -->

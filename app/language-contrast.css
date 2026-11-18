@@ -1,0 +1,53 @@
+/* Final contrast layer for Napiyo. Loaded after all product theme files. */
+
+html.dark {
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #b8c2cf;
+}
+
+html.dark .text-ink-300,
+html.dark .text-ink-400 {
+  color: #b8c2cf !important;
+}
+
+html.dark .text-ink-500,
+html.dark .section-copy,
+html.dark .page-copy,
+html.dark .field-label,
+html.dark .metric-label {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-ink-600,
+html.dark .text-ink-700 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .nepali-system-band {
+  color: #cbd5e1 !important;
+}
+
+.nepal-result-card > div:first-child .text-ink-300 {
+  color: #eaf1ff !important;
+}
+
+.nepal-result-card > div:first-child .text-leaf-300 {
+  color: #ffffff !important;
+}
+
+html.dark .button-quiet,
+html.dark .icon-button {
+  color: #cbd5e1;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9ca8b8 !important;
+  opacity: 1;
+}
+
+html.dark .status-pill,
+html.dark [class*="text-ink-400"],
+html.dark [class*="text-ink-500"] {
+  text-shadow: none;
+}

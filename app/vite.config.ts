@@ -1,0 +1,21 @@
+import { fileURLToPath, URL } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('.', import.meta.url)),
+    },
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
+  build: {
+    target: 'es2022',
+    sourcemap: mode !== 'production',
+  },
+}));
