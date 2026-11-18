@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import {
   Bookmark, BookOpen, Calculator, CheckCircle2, Code2, Contrast, LandPlot, Languages, MapPinned, Menu,
   Moon, Navigation, ShieldCheck, Sun, Type, X,
@@ -56,6 +57,7 @@ const App=()=>{
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-paper-200 bg-white/94 px-2 pt-2 md:hidden" aria-label={ne?'तलको नेभिगेसन':'Bottom navigation'}>{mobileItems.map(item=>{const Icon=item.icon,active=activeView===item.id;return <button key={item.id} type="button" onClick={()=>navigate(item.id)} aria-current={active?'page':undefined} className={`focus-ring flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] font-semibold ${active?'bg-leaf-100 text-leaf-800 ring-1 ring-leaf-200':'text-ink-500'}`}><Icon size={18}/>{item.mobileLabel}</button>;})}</nav>
     {toast&&<div className="pointer-events-none fixed inset-x-4 bottom-24 z-[60] mx-auto flex max-w-sm items-center gap-3 rounded-lg bg-ink-950 px-4 py-3 text-sm font-semibold text-white shadow-soft md:bottom-16" role="status" aria-live="polite"><CheckCircle2 className="shrink-0 text-leaf-300" size={18}/>{toast}</div>}
     {pendingDelete&&<div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/48 p-0 sm:items-center sm:p-6" role="presentation"><section className="w-full max-w-md rounded-t-lg bg-white p-6 shadow-soft sm:rounded-lg" role="dialog" aria-modal="true" aria-labelledby="delete-title"><p className="eyebrow !text-error-500">{ne?'सुरक्षित परियोजना हटाउनुहोस्':'Remove saved project'}</p><h2 id="delete-title" className="mt-2 text-2xl font-bold text-ink-950">{ne?`“${pendingDelete.title}” हटाउने?`:`Delete “${pendingDelete.title}”?`}</h2><p className="mt-3 text-sm leading-6 text-ink-600">{ne?'यसले परियोजना यस ब्राउजरबाट हटाउँछ। पछि आवश्यक पर्न सक्छ भने पहिले ब्याकअप निर्यात गर्नुहोस्।':'This removes the project from this browser. Export a backup first if you may need it later.'}</p><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button ref={cancelDeleteRef} type="button" onClick={()=>setPendingDelete(null)} className="button-secondary focus-ring">{ne?'रद्द गर्नुहोस्':'Cancel'}</button><button type="button" onClick={confirmDelete} className="button-primary focus-ring !border-error-500 !bg-error-500 hover:!border-error-700 hover:!bg-error-700">{ne?'परियोजना हटाउनुहोस्':'Delete project'}</button></div></section></div>}
+    <Analytics />
   </div>;
 };
 interface NavButtonProps{item:NavItem;active:boolean;onClick:()=>void;mobile?:boolean;}
